@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
+      select: false,
     },
 
     avatar: {
@@ -30,10 +31,12 @@ const userSchema = new mongoose.Schema(
     otp: {
       type: String,
       default: null,
+      select: false,
     },
 
     otpExp: {
       type: Date,
+      select: false,
     },
 
     role: {

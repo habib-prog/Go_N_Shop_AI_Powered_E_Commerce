@@ -6,8 +6,8 @@ const DataBase = require("./src/config/database");
 dotenv.config();
 
 const app = express();
-app.use(router);
 app.use(express.json());
+app.use(router);
 
 const Port = process.env.port;
 
