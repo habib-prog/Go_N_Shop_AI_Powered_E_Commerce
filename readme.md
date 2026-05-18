@@ -13,6 +13,7 @@ Go N Shop is a modern single-vendor e-commerce platform built with Node.js, Expr
 - JWT-based Authentication
 - Password Hashing with bcrypt
 - Protected Routes
+- Logout from All Devices
 - Role-based Access (Admin/User)
 - User Ban / Unban (Admin Control)
 - Reset Password System
@@ -24,6 +25,7 @@ Go N Shop is a modern single-vendor e-commerce platform built with Node.js, Expr
 
 - View and Update Profile
 - Browse Products
+- Browse Products with Pagination
 - View Product Details
 - Add to Cart
 - Place Orders
@@ -37,6 +39,7 @@ Go N Shop is a modern single-vendor e-commerce platform built with Node.js, Expr
 - Update Products
 - Delete Products
 - Manage Users (Ban / Unban)
+- View Paginated User List
 - View All Orders
 - Bulk Product Upload (CSV Support)
 
@@ -45,6 +48,7 @@ Go N Shop is a modern single-vendor e-commerce platform built with Node.js, Expr
 ## 📦 Product System
 
 - Product Listing
+- Pagination Support for Product Listing
 - Stock Management
 - Automatic Stock Update after Order
 - Product Validation using Zod
@@ -71,6 +75,12 @@ Go N Shop is a modern single-vendor e-commerce platform built with Node.js, Expr
 
 ---
 
+# 🧪 Testing
+
+- Vitest is used for unit testing, including authentication flow testing such as sign up logic.
+
+---
+
 # 🏗️ Tech Stack
 
 ## Frontend
@@ -93,5 +103,9 @@ Go N Shop is a modern single-vendor e-commerce platform built with Node.js, Expr
 - Zod
 - bcrypt
 - JWT
+
+## Testing
+
+- Vitest
 
 ---
