@@ -2,7 +2,13 @@ const mailService = require("../helpers/Mail/mailService");
 const generateSecureOTP = require("../helpers/Otp/otp");
 const template = require("../helpers/Template/mailTemp");
 const verifySuccessTemplate = require("../helpers/Template/verifySuccessTemp");
-const { signUpSchema } = require("../helpers/ZodValidators/validator");
+const jwt = require("jsonwebtoken");
+const generateAccessToken = require("../helpers/Jwt/generateAccessToken");
+const generateRefreshToken = require("../helpers/Jwt/generateRefreshToken");
+const {
+  signUpSchema,
+  loginSchema,
+} = require("../helpers/ZodValidators/validator");
 const User = require("../models/userSchema");
 
 const signUp = async (req, res) => {
@@ -192,6 +198,149 @@ const otpVerification = async (req, res) => {
   }
 };
 
-const logIn = async (req, res) => {};
+const logIn = async (req, res) => {
+  const parsed = loginSchema.safeParse(req.body);
 
-module.exports = { signUp, logIn, otpVerification, ResendOtp };
+  try {
+    // Validate login input using Zod before querying the database
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: "Validation Failed",
+        errors: parsed.error.flatten().fieldErrors,
+      });
+    }
+
+    const { email, password } = parsed.data;
+
+    // Load the user with the hidden password field for password comparison
+    const user = await User.findOne({ email }).select("+password");
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Prevent login before email verification is completed
+    if (!user.isVerified)
+      return res.status(400).json({ error: "User isn't verified" });
+
+    // Stop banned users from accessing the account
+    if (user.isBanned)
+      return res.status(403).json({ error: "This account has been banned" });
+
+    // Compare the provided password with the hashed password in database
+    const isPassCorrect = await user.comparePassword(password);
+    if (!isPassCorrect)
+      return res.status(401).json({ error: "Invalid email or password" });
+
+    // Make sure the JWT secret exists before generating a token
+    if (!process.env.JWT_ACCESS_SECRET) {
+      return res.status(500).json({ error: "JWT secret is not configured" });
+    }
+
+    // Make sure the refresh secret exists before generating a token
+    if (!process.env.JWT_REFRESH_SECRET) {
+      return res.status(500).json({ error: "Refresh secret is not configured" });
+    }
+
+    // Generate access and refresh tokens from reusable helpers
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    // Save the access token in an HTTP-only cookie
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    // Save the refresh token in a separate HTTP-only cookie
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      message: "Login successful",
+      user: {
+        _id: user._id,
+        fullname: user.fullname,
+        email: user.email,
+        avatar: user.avatar,
+        address: user.address,
+        role: user.role,
+        isVerified: user.isVerified,
+      },
+    });
+  } catch (error) {
+    console.error("Login failed:", error);
+    return res.status(500).json({ error: "Internal server Error" });
+  }
+};
+
+const refreshAccessToken = async (req, res) => {
+  const refreshToken = req.cookies?.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(401).json({ error: "Refresh token missing" });
+  }
+
+  try {
+    // Make sure the refresh secret exists before token verification
+    if (!process.env.JWT_REFRESH_SECRET) {
+      return res
+        .status(500)
+        .json({ error: "Refresh secret is not configured" });
+    }
+
+    // Verify the refresh token from cookie
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+    // Load the user again to avoid issuing tokens for deleted users
+    const user = await User.findById(decoded.userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    if (user.isBanned)
+      return res.status(403).json({ error: "This account has been banned" });
+
+    if (!user.isVerified)
+      return res.status(400).json({ error: "User isn't verified" });
+
+    // Issue a fresh access token and replace the old cookie
+    const newAccessToken = generateAccessToken(user);
+
+    res.cookie("accessToken", newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      message: "Access token refreshed successfully",
+    });
+  } catch (error) {
+    console.error("Refresh token failed:", error);
+
+    // Clear auth cookies when the refresh token is no longer usable
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    return res.status(401).json({ error: "Invalid or expired refresh token" });
+  }
+};
+
+module.exports = {
+  signUp,
+  logIn,
+  otpVerification,
+  ResendOtp,
+  refreshAccessToken,
+};

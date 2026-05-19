@@ -8,4 +8,9 @@ const signUpSchema = z.object({
   address: z.string().optional(),
 });
 
-module.exports = { signUpSchema };
+const loginSchema = z.object({
+  email: z.string().email("Invalid email"),
+  password: z.string().min(6, "Password must be minimum 6 charecters"),
+});
+
+module.exports = { signUpSchema, loginSchema };

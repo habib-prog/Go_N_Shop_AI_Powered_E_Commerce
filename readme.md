@@ -9,6 +9,11 @@ Go N Shop is a modern single-vendor e-commerce platform built with Node.js, Expr
 ## 🔐 Authentication System
 
 - User Registration (Sign Up)
+- Email OTP Verification
+- OTP Expiry Validation
+- Resend OTP Support
+- OTP Cooldown Protection
+- Temporary Abuse Lock for OTP Requests
 - User Login (Sign In)
 - JWT-based Authentication
 - Password Hashing with bcrypt
