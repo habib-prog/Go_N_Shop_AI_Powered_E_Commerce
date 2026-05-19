@@ -5,6 +5,8 @@ const verifySuccessTemplate = require("../helpers/Template/verifySuccessTemp");
 const jwt = require("jsonwebtoken");
 const generateAccessToken = require("../helpers/Jwt/generateAccessToken");
 const generateRefreshToken = require("../helpers/Jwt/generateRefreshToken");
+const destroyAvatarFromCloudinary = require("../helpers/Cloudinary/destroyAvatarFromCloudinary");
+const uploadAvatarToCloudinary = require("../helpers/Cloudinary/uploadAvatarToCloudinary");
 const {
   signUpSchema,
   loginSchema,
@@ -363,6 +365,117 @@ const profile = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    const { fullname } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized access" });
+    }
+
+    if (!fullname && !req.file) {
+      return res.status(400).json({
+        error: "Provide fullname or avatar to update the profile",
+      });
+    }
+
+    const existingUser = await User.findById(userId);
+    if (!existingUser) return res.status(404).json({ error: "User not found" });
+
+    const updateData = {};
+
+    // Update the user's full name when a non-empty value is submitted
+    if (fullname && fullname.trim()) {
+      updateData.fullname = fullname.trim();
+    }
+
+    // Upload the avatar to Cloudinary only when a file is included
+    if (req.file) {
+      if (
+        !process.env.CLOUDINARY_CLOUD_NAME ||
+        !process.env.CLOUDINARY_API_KEY ||
+        !process.env.CLOUDINARY_API_SECRET
+      ) {
+        return res.status(500).json({ error: "Cloudinary is not configured" });
+      }
+
+      const uploadedAvatar = await uploadAvatarToCloudinary(req.file);
+      updateData.avatar = uploadedAvatar.secure_url;
+      updateData.avatarPublicId = uploadedAvatar.public_id;
+    }
+
+    const user = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+      runValidators: true,
+      select: "fullname email avatar address role isBanned createdAt updatedAt",
+    });
+
+    if (req.file && existingUser.avatarPublicId) {
+      // Remove the previous avatar after the new one is saved successfully
+      await destroyAvatarFromCloudinary(existingUser.avatarPublicId);
+    }
+
+    return res.status(200).json({
+      message: "Profile updated successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("Profile update failed:", error);
+    return res.status(500).json({ error: "Internal server Error" });
+  }
+};
+
+const getUserVerificationStatus = async (req, res) => {
+  try {
+    const parseBoolean = (value) => {
+      if (value === "true") return true;
+      if (value === "false") return false;
+      return undefined;
+    };
+
+    const isVerified = parseBoolean(req.query.isVerified);
+    const filter = {};
+
+    // Only apply the filter when the query contains a real boolean value
+    if (typeof isVerified === "boolean") {
+      filter.isVerified = isVerified;
+    }
+
+    // Return only the fields the admin needs to review user verification status
+    const users = await User.find(filter).select(
+      "fullname email avatar address role isVerified isBanned createdAt",
+    );
+
+    // When a specific boolean filter is provided, return only the matched users
+    if (typeof isVerified === "boolean") {
+      return res.status(200).json({
+        message: "User verification status fetched successfully",
+        appliedFilter: { isVerified },
+        count: users.length,
+        users,
+      });
+    }
+
+    const verifiedUsers = users.filter((user) => user.isVerified);
+    const unverifiedUsers = users.filter((user) => !user.isVerified);
+
+    return res.status(200).json({
+      message: "User verification status fetched successfully",
+      appliedFilter: "all users",
+      counts: {
+        verified: verifiedUsers.length,
+        unverified: unverifiedUsers.length,
+      },
+      verifiedUsers,
+      unverifiedUsers,
+    });
+  } catch (error) {
+    console.error("Fetching verification status failed:", error);
+    return res.status(500).json({ error: "Internal server Error" });
+  }
+};
+
 module.exports = {
   signUp,
   logIn,
@@ -370,4 +483,6 @@ module.exports = {
   ResendOtp,
   refreshAccessToken,
   profile,
+  updateProfile,
+  getUserVerificationStatus,
 };
