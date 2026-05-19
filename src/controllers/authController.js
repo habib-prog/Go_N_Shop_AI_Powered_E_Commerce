@@ -236,7 +236,9 @@ const logIn = async (req, res) => {
 
     // Make sure the refresh secret exists before generating a token
     if (!process.env.JWT_REFRESH_SECRET) {
-      return res.status(500).json({ error: "Refresh secret is not configured" });
+      return res
+        .status(500)
+        .json({ error: "Refresh secret is not configured" });
     }
 
     // Generate access and refresh tokens from reusable helpers
@@ -337,10 +339,35 @@ const refreshAccessToken = async (req, res) => {
   }
 };
 
+const profile = async (req, res) => {
+  try {
+    // Access-token middleware stores the logged-in user's payload on req.user
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized access" });
+    }
+
+    // Return only the public profile fields for the current user
+    const user = await User.findById(userId).select(
+      "fullname email avatar address role isBanned createdAt updatedAt",
+    );
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    return res.status(200).json({
+      message: "Profile fetched successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("Profile fetch failed:", error);
+    return res.status(500).json({ error: "Internal server Error" });
+  }
+};
+
 module.exports = {
   signUp,
   logIn,
   otpVerification,
   ResendOtp,
   refreshAccessToken,
+  profile,
 };
