@@ -437,15 +437,27 @@ const getUserVerificationStatus = async (req, res) => {
     const isVerified = parseBoolean(req.query.isVerified);
     const filter = {};
 
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.max(Number(req.query.limit) || 10, 1);
+    const skip = (page - 1) * limit;
+
     // Only apply the filter when the query contains a real boolean value
     if (typeof isVerified === "boolean") {
       filter.isVerified = isVerified;
     }
-
+    // TotalUsers for Pagination
+    const totalUsers = await User.countDocuments(filter);
     // Return only the fields the admin needs to review user verification status
-    const users = await User.find(filter).select(
-      "fullname email avatar address role isVerified isBanned createdAt",
-    );
+    const users = await User.find(filter)
+      .select(
+        "fullname email avatar address role isVerified isBanned createdAt",
+      )
+      .skip(skip)
+      .limit(limit);
+
+    const totalPages = Math.ceil(totalUsers / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
 
     // When a specific boolean filter is provided, return only the matched users
     if (typeof isVerified === "boolean") {
@@ -460,16 +472,30 @@ const getUserVerificationStatus = async (req, res) => {
     const verifiedUsers = users.filter((user) => user.isVerified);
     const unverifiedUsers = users.filter((user) => !user.isVerified);
 
-    return res.status(200).json({
+    const response = {
       message: "User verification status fetched successfully",
-      appliedFilter: "all users",
-      counts: {
-        verified: verifiedUsers.length,
-        unverified: unverifiedUsers.length,
+      appliedFilter:
+        typeof isVerified === "boolean" ? { isVerified } : "all users",
+      pagination: {
+        totalUsers,
+        totalPages,
+        currentPage: page,
+        limit,
+        hasPrevPage,
+        hasNextPage,
       },
-      verifiedUsers,
-      unverifiedUsers,
-    });
+      users,
+    };
+
+    if (hasNextPage) {
+      response.pagination.nextPage = page + 1;
+    }
+
+    if (hasPrevPage) {
+      response.pagination.prevPage = page - 1;
+    }
+
+    return res.status(200).json(response);
   } catch (error) {
     console.error("Fetching verification status failed:", error);
     return res.status(500).json({ error: "Internal server Error" });
