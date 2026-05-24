@@ -13,4 +13,9 @@ const loginSchema = z.object({
   password: z.string().min(6, "Password must be minimum 6 charecters"),
 });
 
-module.exports = { signUpSchema, loginSchema };
+const schemaCategory = z.object({
+  name: z.string().min(3, "Name must be minimum of 3 charecters"),
+  thumbnail: z.string(),
+});
+
+module.exports = { signUpSchema, loginSchema, schemaCategory };

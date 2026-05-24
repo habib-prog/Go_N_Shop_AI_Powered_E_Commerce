@@ -1,5 +1,6 @@
 const express = require("express");
 const Category = require("../models/CategorySchema");
+const { CreateCategory } = require("../controllers/categoryController");
 
 const router = express.Router();
 
@@ -18,4 +19,5 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.post("createcategory", CreateCategory);
 module.exports = router;
