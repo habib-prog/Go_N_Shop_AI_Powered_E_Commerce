@@ -1,6 +1,8 @@
 const express = require("express");
 const Category = require("../models/CategorySchema");
 const { CreateCategory } = require("../controllers/categoryController");
+const verifyAccessToken = require("../middleware/verifyAccessToken");
+const isAdmin = require("../middleware/isAdmin");
 
 const router = express.Router();
 
@@ -19,5 +21,5 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("createcategory", CreateCategory);
+router.post("/createcategory", verifyAccessToken, isAdmin, CreateCategory);
 module.exports = router;
