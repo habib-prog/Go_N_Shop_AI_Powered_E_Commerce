@@ -1,8 +1,11 @@
-// Import Node's path utility so we can build stable absolute paths for our local modules.
+// Import Node's path utility So we can build stable absolute paths for our local modules.
 const path = require("path");
 
 // Build the absolute path to the auth controller file we want to test.
-const controllerPath = path.resolve(__dirname, "../src/controllers/authController.js");
+const controllerPath = path.resolve(
+  __dirname,
+  "../src/controllers/authController.js",
+);
 // Build the absolute path to the mail service dependency that we want to replace in tests.
 const mailServicePath = path.resolve(
   __dirname,

@@ -20,6 +20,6 @@ router.get("/", async (req, res) => {
     return res.status(500).json({ error: "Internal server Error" });
   }
 });
-
+// Create Category Route
 router.post("/createcategory", verifyAccessToken, isAdmin, CreateCategory);
 module.exports = router;
