@@ -43,24 +43,6 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    // Counts how many times the user has requested a new OTP
-    otpResendCount: {
-      type: Number,
-      default: 0,
-      select: false,
-    },
-    // Temporarily blocks OTP resend requests after repeated abuse
-    otpBlockedUntil: {
-      type: Date,
-      default: null,
-      select: false,
-    },
-    // Stores the timestamp of the last OTP resend request
-    lastOtpSentAt: {
-      type: Date,
-      default: null,
-      select: false,
-    },
 
     // Stores the OTP expiration time
     otpExp: {

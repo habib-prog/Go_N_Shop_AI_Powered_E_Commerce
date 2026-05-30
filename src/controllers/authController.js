@@ -3,6 +3,7 @@ const generateSecureOTP = require("../helpers/Otp/otp");
 const template = require("../helpers/Template/mailTemp");
 const verifySuccessTemplate = require("../helpers/Template/verifySuccessTemp");
 const jwt = require("jsonwebtoken");
+const redis = require("../config/redis");
 const generateAccessToken = require("../helpers/Jwt/generateAccessToken");
 const generateRefreshToken = require("../helpers/Jwt/generateRefreshToken");
 const destroyAvatarFromCloudinary = require("../helpers/Cloudinary/destroyAvatarFromCloudinary");
@@ -78,47 +79,53 @@ const ResendOtp = async (req, res) => {
 
   try {
     // Load the user with hidden OTP-related tracking fields
-    const user = await User.findOne({ email }).select(
-      "+otp +otpExp +lastOtpSentAt +otpResendCount +otpBlockedUntil",
-    );
+    const user = await User.findOne({ email }).select("+otp +otpExp");
     if (!user) return res.status(404).json({ error: "User not found!" });
 
     // Do not resend OTP if the account is already verified
     if (user.isVerified)
       return res.status(400).json({ error: "User is already verified" });
 
-    const Now = new Date();
+    // 1. Redis Key names define
+    const blockKey = `otp:block:${email}`;
+    const cooldownKey = `otp:cooldown:${email}`;
+    const attemptsKey = `otp:attempts:${email}`;
 
-    // Block resend requests while the temporary lock is active
-    if (user.otpBlockedUntil && user.otpBlockedUntil > Now)
+    // 2. Check 20 minuites Block
+
+    const blockedTtl = await redis.ttl(blockKey);
+    if (blockedTtl > 0) {
+      return res.status(429).json({
+        error: "Too many OTP requests. Try again after 20 minutes",
+        retryAfterSeconds: blockedTtl,
+      });
+    }
+
+    // 3. Cooldown check
+
+    const cooldownTtl = await redis.ttl(cooldownKey);
+    if (cooldownTtl > 0) {
+      return res.status(429).json({
+        error: "Please wait 60 seconds before requesting a new OTP",
+        retryAfterSeconds: cooldownTtl,
+      });
+    }
+
+    // 4. Increamenting Attempts Key on each request
+
+    const attempts = await redis.incr(attemptsKey);
+
+    // If first hit then start timer 20 mins to keep the record
+    if (attempts === 1) {
+      await redis.expire(attemptsKey, 20 * 60);
+    }
+    // 5. Set block key after 5 hits
+    if (attempts > 5) {
+      await redis.set(blockKey, "1", { EX: 20 * 60 });
       return res.status(429).json({
         error: "Too many OTP requests. Try again after 20 minutes",
       });
-
-    // Reset block state after the lock period has expired
-    if (user.otpBlockedUntil && user.otpBlockedUntil <= Now) {
-      user.otpBlockedUntil = null;
-      user.otpResendCount = 0;
     }
-
-    // Prevent repeated requests within the cooldown window - 60 Seconds
-    if (user.lastOtpSentAt && Now - user.lastOtpSentAt < 60 * 1000) {
-      return res.status(429).json({
-        error: "Please wait 60 seconds before requesting a new OTP",
-      });
-
-      // Lock the user if resend attempts exceed the allowed limit
-      if (user.otpResendCount >= 5) {
-        user.otpBlockedUntil = new Date(Date.now() + 20 * 60 * 1000);
-        user.otpResendCount = 0;
-        await user.save();
-
-        return res.status(429).json({
-          error: "Too many OTP requests. Try again after 20 minutes",
-        });
-      }
-    }
-
     // Generate a new OTP and refresh its expiry time
     const newOTP = generateSecureOTP();
     const newEXP = new Date(Date.now() + 10 * 60 * 1000);
@@ -126,10 +133,10 @@ const ResendOtp = async (req, res) => {
     // Update OTP and resend tracking values
     user.otp = newOTP;
     user.otpExp = newEXP;
-    user.lastOtpSentAt = Now;
-    user.otpResendCount += 1;
-    await user.save();
 
+    await user.save();
+    // Set 60 sec cool down
+    await redis.set(cooldownKey, "1", { EX: 60 });
     // Send the new OTP to the user's email
     await mailService({
       email: user.email,
@@ -178,6 +185,11 @@ const otpVerification = async (req, res) => {
     user.otp = null;
     user.otpExp = null;
     await user.save();
+
+    // Delete Redis Key
+    await redis.del(`otp:block:${email}`);
+    await redis.del(`otp:cooldown:${email}`);
+    await redis.del(`otp:attempts:${email}`);
 
     // Send a confirmation email after successful verification
     await mailService({
