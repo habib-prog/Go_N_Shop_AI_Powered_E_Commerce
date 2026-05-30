@@ -114,3 +114,29 @@ Go N Shop is a modern single-vendor e-commerce platform built with Node.js, Expr
 - Vitest
 
 ---
+
+# 📝 Change Set
+
+## Versioning Rules
+
+- `patch` means small fixes, bug fixes, typo fixes, or refactors that do not change the feature set
+- `minor` means new features or meaningful improvements that stay backward compatible
+- `major` means breaking changes that can affect existing API behavior, contracts, or usage
+
+## Current Change Set
+
+### patch
+
+- Added Redis-based OTP cooldown support
+- Removed OTP resend tracking fields from `userSchema`
+- Added Redis config and smoke test support
+- Fixed OTP resend rate-limit flow logic
+
+### minor
+
+- Refined OTP resend and verification flow
+- Improved authentication documentation and status tracking
+
+### major
+
+- No major breaking auth change yet
