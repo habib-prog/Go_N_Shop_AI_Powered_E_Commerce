@@ -3,6 +3,7 @@ const Category = require("../models/CategorySchema");
 const { CreateCategory } = require("../controllers/categoryController");
 const verifyAccessToken = require("../middleware/verifyAccessToken");
 const isAdmin = require("../middleware/isAdmin");
+const uploadCategoryImageToCloudinary = require("../helpers/Cloudinary/uploadCategoryImageToCloudinary");
 
 const router = express.Router();
 
@@ -21,5 +22,11 @@ router.get("/", async (req, res) => {
   }
 });
 // Create Category ROUTES
-router.post("/createcategory", verifyAccessToken, isAdmin, CreateCategory);
+router.post(
+  "/createcategory",
+  verifyAccessToken,
+  isAdmin,
+  uploadCategoryImageToCloudinary.single("thumbnail"),
+  CreateCategory,
+);
 module.exports = router;

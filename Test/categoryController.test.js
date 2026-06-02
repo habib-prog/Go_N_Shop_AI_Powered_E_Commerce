@@ -8,11 +8,17 @@ const categoryModelPath = path.resolve(
   __dirname,
   "../src/models/CategorySchema.js",
 );
+const uploadCategoryImageToCloudinaryPath = path.resolve(
+  __dirname,
+  "../src/helpers/Cloudinary/uploadCategoryImageToCloudinary.js",
+);
 
 const categoryModelMock = {
   findOne: vi.fn(),
   create: vi.fn(),
 };
+
+const uploadCategoryImageToCloudinaryMock = vi.fn();
 
 const mockLocalModule = (modulePath, mockExports) => {
   const resolvedModulePath = require.resolve(modulePath);
@@ -42,6 +48,10 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.resetModules();
   mockLocalModule(categoryModelPath, categoryModelMock);
+  mockLocalModule(
+    uploadCategoryImageToCloudinaryPath,
+    uploadCategoryImageToCloudinaryMock,
+  );
   clearLocalModule(controllerPath);
   categoryController = require(controllerPath);
 });
@@ -49,6 +59,7 @@ beforeEach(() => {
 afterEach(() => {
   clearLocalModule(controllerPath);
   clearLocalModule(categoryModelPath);
+  clearLocalModule(uploadCategoryImageToCloudinaryPath);
 });
 
 describe("categoryController", () => {
@@ -57,7 +68,10 @@ describe("categoryController", () => {
       const req = {
         body: {
           name: "Smartphones",
-          thumbnail: "https://example.com/smartphones.jpg",
+        },
+        file: {
+          buffer: Buffer.from("fake-image"),
+          mimetype: "image/jpeg",
         },
       };
       const res = createResponse();
@@ -66,8 +80,13 @@ describe("categoryController", () => {
         name: "Smartphones",
         thumbnail: "https://example.com/smartphones.jpg",
       };
+      const uploadedImage = {
+        secure_url: "https://example.com/smartphones.jpg",
+        public_id: "category/smartphones",
+      };
 
       categoryModelMock.findOne.mockResolvedValue(null);
+      uploadCategoryImageToCloudinaryMock.mockResolvedValue(uploadedImage);
       categoryModelMock.create.mockResolvedValue(createdCategory);
 
       await categoryController.CreateCategory(req, res);
@@ -75,6 +94,7 @@ describe("categoryController", () => {
       expect(categoryModelMock.findOne).toHaveBeenCalledWith({
         name: "Smartphones",
       });
+      expect(uploadCategoryImageToCloudinaryMock).toHaveBeenCalledWith(req.file);
       expect(categoryModelMock.create).toHaveBeenCalledWith({
         name: "Smartphones",
         thumbnail: "https://example.com/smartphones.jpg",
@@ -103,7 +123,6 @@ describe("categoryController", () => {
         error: "Validation Failed",
         errors: {
           name: ["Name must be minimum of 3 charecters"],
-          thumbnail: ["Invalid input: expected string, received undefined"],
         },
       });
     });
@@ -112,7 +131,10 @@ describe("categoryController", () => {
       const req = {
         body: {
           name: "Laptops",
-          thumbnail: "https://example.com/laptops.jpg",
+        },
+        file: {
+          buffer: Buffer.from("fake-image"),
+          mimetype: "image/jpeg",
         },
       };
       const res = createResponse();
@@ -127,6 +149,7 @@ describe("categoryController", () => {
       expect(categoryModelMock.findOne).toHaveBeenCalledWith({
         name: "Laptops",
       });
+      expect(uploadCategoryImageToCloudinaryMock).not.toHaveBeenCalled();
       expect(categoryModelMock.create).not.toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(409);
       expect(res.json).toHaveBeenCalledWith({

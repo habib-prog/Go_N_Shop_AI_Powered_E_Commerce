@@ -15,7 +15,6 @@ const loginSchema = z.object({
 
 const schemaCategory = z.object({
   name: z.string().min(3, "Name must be minimum of 3 charecters"),
-  thumbnail: z.string(),
 });
 
 module.exports = { signUpSchema, loginSchema, schemaCategory };

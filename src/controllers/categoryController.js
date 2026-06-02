@@ -1,5 +1,6 @@
 const Category = require("../models/CategorySchema");
 const { schemaCategory } = require("../helpers/ZodValidators/validator");
+const uploadCategoryImageToCloudinary = require("../helpers/Cloudinary/uploadCategoryImageToCloudinary");
 
 const CreateCategory = async (req, res) => {
   const parsed = schemaCategory.safeParse(req.body);
@@ -12,7 +13,13 @@ const CreateCategory = async (req, res) => {
       });
     }
 
-    const { name, thumbnail } = parsed.data;
+    const { name } = parsed.data;
+
+    if (!req.file) {
+      return res.status(400).json({
+        error: "Thumbnail image is required",
+      });
+    }
 
     const existingCategory = await Category.findOne({ name });
 
@@ -21,10 +28,11 @@ const CreateCategory = async (req, res) => {
         error: "Category already exists",
       });
     }
+    const uploadedImage = await uploadCategoryImageToCloudinary(req.file);
 
     const newCategory = await Category.create({
       name,
-      thumbnail,
+      thumbnail: uploadedImage.secure_url,
     });
 
     return res.status(201).json({
