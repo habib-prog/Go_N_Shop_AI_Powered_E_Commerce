@@ -14,6 +14,38 @@ Go N Shop is a modern single-vendor e-commerce platform built with Node.js, Expr
 
 ---
 
+# 🐳 Docker Setup
+
+Docker is a good next step for this project because it lets you run the backend, frontend, MongoDB, and Redis in isolated environments.
+
+## Recommended Services
+
+- `api` for the Express backend
+- `web` for the React frontend
+- `mongo` for MongoDB
+- `redis` for Redis-based OTP and rate-limit support
+
+## Local Development Flow
+
+- Install Docker Desktop first
+- Use `docker compose` to run the full stack later
+- Keep environment variables separate for local and container-based runs
+
+## Important Environment Notes
+
+- If MongoDB runs in Docker, `DB_URL` should point to the container service name instead of `localhost`
+- If Redis runs in Docker, `REDIS_URL` should point to the Redis service name instead of `127.0.0.1`
+- The backend should read its port from an environment variable such as `PORT`
+
+## Suggested Docker Files
+
+- `Dockerfile` for the backend
+- `apps/web/Dockerfile` for the frontend
+- `docker-compose.yml` at the repo root
+- `.dockerignore` to keep images small and builds clean
+
+---
+
 # 🚀 Features
 
 ## 🔐 Authentication System
@@ -137,6 +169,8 @@ Go N Shop is a modern single-vendor e-commerce platform built with Node.js, Expr
 
 ### patch
 
+- Added monorepo workspace structure for backend and React frontend
+- Added the React frontend starter inside `apps/web`
 - Added Redis-based OTP cooldown support
 - Removed OTP resend tracking fields from `userSchema`
 - Added Redis config and smoke test support
@@ -144,6 +178,7 @@ Go N Shop is a modern single-vendor e-commerce platform built with Node.js, Expr
 
 ### minor
 
+- Documented the monorepo workflow and Docker setup
 - Refined OTP resend and verification flow
 - Improved authentication documentation and status tracking
 
