@@ -2,9 +2,16 @@
   "name": "go_n_shop",
   "version": "1.0.0",
   "description": "",
+  "private": true,
   "main": "server.js",
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "start": "node --watch server.js",
+    "dev": "node --watch server.js",
+    "dev:api": "node --watch server.js",
+    "dev:web": "npm --workspace=apps/web run dev",
     "test": "vitest"
   },
   "dependencies": {

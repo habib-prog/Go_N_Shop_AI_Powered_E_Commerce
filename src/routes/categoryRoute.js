@@ -3,7 +3,7 @@ const Category = require("../models/CategorySchema");
 const { CreateCategory } = require("../controllers/categoryController");
 const verifyAccessToken = require("../middleware/verifyAccessToken");
 const isAdmin = require("../middleware/isAdmin");
-const uploadCategoryImageToCloudinary = require("../helpers/Cloudinary/uploadCategoryImageToCloudinary");
+const uploadCategoryImage = require("../middleware/uploadCategoryImage");
 
 const router = express.Router();
 
@@ -26,7 +26,7 @@ router.post(
   "/createcategory",
   verifyAccessToken,
   isAdmin,
-  uploadCategoryImageToCloudinary.single("thumbnail"),
+  uploadCategoryImage.single("thumbnail"),
   CreateCategory,
 );
 module.exports = router;

@@ -4,6 +4,16 @@ Go N Shop is a modern single-vendor e-commerce platform built with Node.js, Expr
 
 ---
 
+# 📁 Monorepo Layout
+
+- `server.js` and the existing backend stay at the repo root
+- `apps/web` holds the React frontend starter
+- `npm install` at the repo root will manage both workspaces
+- `npm run dev:api` starts the backend
+- `npm run dev:web` starts the frontend
+
+---
+
 # 🚀 Features
 
 ## 🔐 Authentication System
