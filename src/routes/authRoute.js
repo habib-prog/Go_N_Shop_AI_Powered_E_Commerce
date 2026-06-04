@@ -29,7 +29,7 @@ router.patch(
   uploadAvatar.single("avatar"),
   updateProfile,
 );
-router.post("/otpVerify", otpVerification);
+router.post("/otpverify", otpVerification);
 router.post("/resendotp", ResendOtp);
 
 module.exports = router;
