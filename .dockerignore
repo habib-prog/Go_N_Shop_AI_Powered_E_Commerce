@@ -1,0 +1,9 @@
+node_modules
+npm-debug.log
+.git
+.github
+.env
+Test
+readme.md
+apps/web/node_modules
+apps/web/dist
