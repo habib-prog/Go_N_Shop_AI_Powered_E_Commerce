@@ -1,4 +1,4 @@
-# 🛒 Go N Shop
+# 🛒 Go N Shop  [ Ongoing Development ]
 
 Go N Shop is a modern single-vendor e-commerce platform built with Node.js, Express, MongoDB, React, and Zod validation. This project is designed as a production-style backend and frontend system to simulate real-world e-commerce workflows, focusing on clean architecture, secure authentication, and scalable design.
 
