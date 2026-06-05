@@ -6,12 +6,14 @@ const {
   signUpUser,
   resendOtp: resendOtpService,
   verifyOtp: verifyOtpService,
-  loginUser,
-  refreshAccessToken: refreshAccessTokenService,
+} = require("../services/auth/register.service");
+const loginUser = require("../services/auth/login.service");
+const refreshAccessTokenService = require("../services/auth/token.service");
+const {
   getProfile: getProfileService,
   updateProfile: updateProfileService,
   getUserVerificationStatus: getUserVerificationStatusService,
-} = require("../services/authService");
+} = require("../services/auth/profile.service");
 
 const handleError = (res, error) => {
   const statusCode = error.statusCode || 500;
@@ -178,7 +180,8 @@ const refreshAccessToken = async (req, res) => {
 
     return handleError(res, {
       statusCode: error.statusCode || 401,
-      message: error.statusCode ? error.message : "Invalid or expired refresh token",
+      message:
+        error.statusCode ? error.message : "Invalid or expired refresh token",
     });
   }
 };

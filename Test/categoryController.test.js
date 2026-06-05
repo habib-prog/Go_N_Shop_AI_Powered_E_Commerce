@@ -43,10 +43,13 @@ const createResponse = () => {
 };
 
 let categoryController;
+let consoleErrorSpy;
 
 beforeEach(() => {
   vi.clearAllMocks();
   vi.resetModules();
+  // Silence expected error logs so the test output stays clean for handled 4xx cases.
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   mockLocalModule(categoryModelPath, categoryModelMock);
   mockLocalModule(
     uploadCategoryImageToCloudinaryPath,
@@ -57,6 +60,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // Restore console.error after each test so other files keep normal logging behavior.
+  consoleErrorSpy?.mockRestore();
   clearLocalModule(controllerPath);
   clearLocalModule(categoryModelPath);
   clearLocalModule(uploadCategoryImageToCloudinaryPath);
