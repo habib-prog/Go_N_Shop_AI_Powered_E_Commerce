@@ -1,23 +1,30 @@
-const mailService = require("../helpers/Mail/mailService");
-const generateSecureOTP = require("../helpers/Otp/otp");
-const template = require("../helpers/Template/mailTemp");
-const verifySuccessTemplate = require("../helpers/Template/verifySuccessTemp");
-const jwt = require("jsonwebtoken");
-const redis = require("../config/redis");
-const generateAccessToken = require("../helpers/Jwt/generateAccessToken");
-const generateRefreshToken = require("../helpers/Jwt/generateRefreshToken");
-const destroyAvatarFromCloudinary = require("../helpers/Cloudinary/destroyAvatarFromCloudinary");
-const uploadAvatarToCloudinary = require("../helpers/Cloudinary/uploadAvatarToCloudinary");
 const {
   signUpSchema,
   loginSchema,
 } = require("../helpers/ZodValidators/validator");
-const User = require("../models/userSchema");
+const {
+  signUpUser,
+  resendOtp: resendOtpService,
+  verifyOtp: verifyOtpService,
+  loginUser,
+  refreshAccessToken: refreshAccessTokenService,
+  getProfile: getProfileService,
+  updateProfile: updateProfileService,
+  getUserVerificationStatus: getUserVerificationStatusService,
+} = require("../services/authService");
+
+const handleError = (res, error) => {
+  const statusCode = error.statusCode || 500;
+  const message =
+    statusCode === 500 ? "Internal server Error" : error.message || "Error";
+
+  return res.status(statusCode).json({ error: message });
+};
 
 const signUp = async (req, res) => {
   const parsed = signUpSchema.safeParse(req.body);
+
   try {
-    //   Checking input data Using ZOD
     if (!parsed.success) {
       return res.status(400).json({
         message: "Validation Failed",
@@ -27,37 +34,14 @@ const signUp = async (req, res) => {
 
     const { fullname, email, password, avatar, address } = parsed.data;
 
-    const existingUser = await User.findOne({ email });
-
-    if (existingUser)
-      return res.status(409).json({ error: "user already exist" });
-    // Generate OTP
-    const OtpCode = generateSecureOTP();
-
-    //  otp expiry time
-
-    const expireAfter = new Date(Date.now() + 10 * 60 * 1000);
-
-    const user = await User.create({
+    const user = await signUpUser({
       fullname,
       email,
       password,
       avatar,
       address,
-      otp: OtpCode,
-      otpExp: expireAfter,
     });
-    await mailService({
-      email,
-      otp: OtpCode,
-      msg: "Verify OTP to Sign Up",
-      sub: "Go N Shop Email Verification",
-      template: template(
-        OtpCode,
-        "Verify OTP to Sign Up",
-        "Go N Shop Email Verification",
-      ),
-    });
+
     return res.status(201).json({
       message: "Sign Up successfull",
       user: {
@@ -69,135 +53,31 @@ const signUp = async (req, res) => {
     });
   } catch (error) {
     console.error("Sign up failed:", error);
-    return res.status(500).json({ error: "Internal server Error" });
+    return handleError(res, error);
   }
 };
 const ResendOtp = async (req, res) => {
   const { email } = req.body;
-  // Make sure the request includes the user's email
   if (!email) return res.status(400).json({ error: "Email is required" });
 
   try {
-    // Load the user with hidden OTP-related tracking fields
-    const user = await User.findOne({ email }).select("+otp +otpExp");
-    if (!user) return res.status(404).json({ error: "User not found!" });
-
-    // Do not resend OTP if the account is already verified
-    if (user.isVerified)
-      return res.status(400).json({ error: "User is already verified" });
-
-    // 1. Redis Key names define
-    const blockKey = `otp:block:${email}`;
-    const cooldownKey = `otp:cooldown:${email}`;
-    const attemptsKey = `otp:attempts:${email}`;
-
-    // 2. Check 20 minuites Block
-
-    const blockedTtl = await redis.ttl(blockKey);
-    if (blockedTtl > 0) {
-      return res.status(429).json({
-        error: "Too many OTP requests. Try again after 20 minutes",
-        retryAfterSeconds: blockedTtl,
-      });
-    }
-
-    // 3. Cooldown check
-
-    const cooldownTtl = await redis.ttl(cooldownKey);
-    if (cooldownTtl > 0) {
-      return res.status(429).json({
-        error: "Please wait 60 seconds before requesting a new OTP",
-        retryAfterSeconds: cooldownTtl,
-      });
-    }
-
-    // 4. Increamenting Attempts Key on each request
-
-    const attempts = await redis.incr(attemptsKey);
-
-    // If first hit then start timer 20 mins to keep the record
-    if (attempts === 1) {
-      await redis.expire(attemptsKey, 20 * 60);
-    }
-    // 5. Set block key after 5 hits
-    if (attempts > 5) {
-      await redis.set(blockKey, "1", { EX: 20 * 60 });
-      return res.status(429).json({
-        error: "Too many OTP requests. Try again after 20 minutes",
-      });
-    }
-    // Generate a new OTP and refresh its expiry time
-    const newOTP = generateSecureOTP();
-    const newEXP = new Date(Date.now() + 10 * 60 * 1000);
-
-    // Update OTP and resend tracking values
-    user.otp = newOTP;
-    user.otpExp = newEXP;
-
-    await user.save();
-    // Set 60 sec cool down
-    await redis.set(cooldownKey, "1", { EX: 60 });
-    // Send the new OTP to the user's email
-    await mailService({
-      email: user.email,
-      otp: newOTP,
-      msg: "Verify OTP to Sign Up",
-      sub: "Go N Shop Email Verification",
-      template: template(
-        newOTP,
-        "Verify OTP to Sign Up",
-        "Go N Shop Email Verification",
-      ),
-    });
+    await resendOtpService(email);
 
     return res.status(200).json({
       message: "OTP resent successfully",
     });
   } catch (error) {
     console.error("Resend OTP failed:", error);
-    return res.status(500).json({ error: "Internal server Error" });
+    return handleError(res, error);
   }
 };
 const otpVerification = async (req, res) => {
   const { email, otp } = req.body;
-  // Ensure both email and OTP are provided in the request
   if (!email || !otp)
     return res.status(400).json({ error: "email and otp is required" });
   try {
-    // Fetch the user along with hidden OTP fields
-    const user = await User.findOne({ email }).select("+otp +otpExp");
-    if (!user) return res.status(400).json({ error: "User not found!" });
+    const user = await verifyOtpService({ email, otp });
 
-    // Stop verification if the account is already verified
-    if (user.isVerified)
-      return res.status(404).json({ error: "User is already verified" });
-
-    // Compare the stored OTP with the submitted one
-    if (user.otp !== String(otp))
-      return res.status(400).json({ error: "OTP is invalid" });
-
-    // Reject the request if the OTP has expired
-    if (user.otpExp < new Date())
-      return res.status(400).json({ error: "Otp has expired" });
-
-    // Mark the user as verified and clear OTP-related fields
-    user.isVerified = true;
-    user.otp = null;
-    user.otpExp = null;
-    await user.save();
-
-    // Delete Redis Key
-    await redis.del(`otp:block:${email}`);
-    await redis.del(`otp:cooldown:${email}`);
-    await redis.del(`otp:attempts:${email}`);
-
-    // Send a confirmation email after successful verification
-    await mailService({
-      email: user.email,
-      msg: "Your account has been verified successfully",
-      sub: "Go N Shop Account Verified Successfully",
-      template: verifySuccessTemplate(user.fullname),
-    });
     return res.status(200).json({
       message: "Email verification successful!",
       user: {
@@ -208,7 +88,7 @@ const otpVerification = async (req, res) => {
     });
   } catch (error) {
     console.error("OTP Verification failed:", error);
-    return res.status(500).json({ error: "Internal server Error" });
+    return handleError(res, error);
   }
 };
 
@@ -216,7 +96,6 @@ const logIn = async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
 
   try {
-    // Validate login input using Zod before querying the database
     if (!parsed.success) {
       return res.status(400).json({
         message: "Validation Failed",
@@ -226,40 +105,11 @@ const logIn = async (req, res) => {
 
     const { email, password } = parsed.data;
 
-    // Load the user with the hidden password field for password comparison
-    const user = await User.findOne({ email }).select("+password");
-    if (!user) return res.status(404).json({ error: "User not found" });
+    const { user, accessToken, refreshToken } = await loginUser({
+      email,
+      password,
+    });
 
-    // Prevent login before email verification is completed
-    if (!user.isVerified)
-      return res.status(400).json({ error: "User isn't verified" });
-
-    // Stop banned users from accessing the account
-    if (user.isBanned)
-      return res.status(403).json({ error: "This account has been banned" });
-
-    // Compare the provided password with the hashed password in database
-    const isPassCorrect = await user.comparePassword(password);
-    if (!isPassCorrect)
-      return res.status(401).json({ error: "Invalid email or password" });
-
-    // Make sure the JWT secret exists before generating a token
-    if (!process.env.JWT_ACCESS_SECRET) {
-      return res.status(500).json({ error: "JWT secret is not configured" });
-    }
-
-    // Make sure the refresh secret exists before generating a token
-    if (!process.env.JWT_REFRESH_SECRET) {
-      return res
-        .status(500)
-        .json({ error: "Refresh secret is not configured" });
-    }
-
-    // Generate access and refresh tokens from reusable helpers
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
-
-    // Save the access token in an HTTP-only cookie
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -267,7 +117,6 @@ const logIn = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    // Save the refresh token in a separate HTTP-only cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -289,7 +138,7 @@ const logIn = async (req, res) => {
     });
   } catch (error) {
     console.error("Login failed:", error);
-    return res.status(500).json({ error: "Internal server Error" });
+    return handleError(res, error);
   }
 };
 
@@ -301,28 +150,8 @@ const refreshAccessToken = async (req, res) => {
   }
 
   try {
-    // Make sure the refresh secret exists before token verification
-    if (!process.env.JWT_REFRESH_SECRET) {
-      return res
-        .status(500)
-        .json({ error: "Refresh secret is not configured" });
-    }
-
-    // Verify the refresh token from cookie
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-
-    // Load the user again to avoid issuing tokens for deleted users
-    const user = await User.findById(decoded.userId);
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    if (user.isBanned)
-      return res.status(403).json({ error: "This account has been banned" });
-
-    if (!user.isVerified)
-      return res.status(400).json({ error: "User isn't verified" });
-
-    // Issue a fresh access token and replace the old cookie
-    const newAccessToken = generateAccessToken(user);
+    const { accessToken: newAccessToken } =
+      await refreshAccessTokenService(refreshToken);
 
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
@@ -336,8 +165,6 @@ const refreshAccessToken = async (req, res) => {
     });
   } catch (error) {
     console.error("Refresh token failed:", error);
-
-    // Clear auth cookies when the refresh token is no longer usable
     res.clearCookie("accessToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -349,23 +176,21 @@ const refreshAccessToken = async (req, res) => {
       sameSite: "strict",
     });
 
-    return res.status(401).json({ error: "Invalid or expired refresh token" });
+    return handleError(res, {
+      statusCode: error.statusCode || 401,
+      message: error.statusCode ? error.message : "Invalid or expired refresh token",
+    });
   }
 };
 
 const profile = async (req, res) => {
   try {
-    // Access-token middleware stores the logged-in user's payload on req.user
     const userId = req.user?.userId;
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized access" });
     }
 
-    // Return only the public profile fields for the current user
-    const user = await User.findById(userId).select(
-      "fullname email avatar address role isBanned createdAt updatedAt",
-    );
-    if (!user) return res.status(404).json({ error: "User not found" });
+    const user = await getProfileService(userId);
 
     return res.status(200).json({
       message: "Profile fetched successfully",
@@ -373,7 +198,7 @@ const profile = async (req, res) => {
     });
   } catch (error) {
     console.error("Profile fetch failed:", error);
-    return res.status(500).json({ error: "Internal server Error" });
+    return handleError(res, error);
   }
 };
 
@@ -391,42 +216,11 @@ const updateProfile = async (req, res) => {
         error: "Provide fullname or avatar to update the profile",
       });
     }
-
-    const existingUser = await User.findById(userId);
-    if (!existingUser) return res.status(404).json({ error: "User not found" });
-
-    const updateData = {};
-
-    // Update the user's full name when a non-empty value is submitted
-    if (fullname && fullname.trim()) {
-      updateData.fullname = fullname.trim();
-    }
-
-    // Upload the avatar to Cloudinary only when a file is included
-    if (req.file) {
-      if (
-        !process.env.CLOUDINARY_CLOUD_NAME ||
-        !process.env.CLOUDINARY_API_KEY ||
-        !process.env.CLOUDINARY_API_SECRET
-      ) {
-        return res.status(500).json({ error: "Cloudinary is not configured" });
-      }
-
-      const uploadedAvatar = await uploadAvatarToCloudinary(req.file);
-      updateData.avatar = uploadedAvatar.secure_url;
-      updateData.avatarPublicId = uploadedAvatar.public_id;
-    }
-
-    const user = await User.findByIdAndUpdate(userId, updateData, {
-      new: true,
-      runValidators: true,
-      select: "fullname email avatar address role isBanned createdAt updatedAt",
+    const user = await updateProfileService({
+      userId,
+      fullname,
+      file: req.file,
     });
-
-    if (req.file && existingUser.avatarPublicId) {
-      // Remove the previous avatar after the new one is saved successfully
-      await destroyAvatarFromCloudinary(existingUser.avatarPublicId);
-    }
 
     return res.status(200).json({
       message: "Profile updated successfully",
@@ -434,83 +228,30 @@ const updateProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Profile update failed:", error);
-    return res.status(500).json({ error: "Internal server Error" });
+    return handleError(res, error);
   }
 };
 
 const getUserVerificationStatus = async (req, res) => {
   try {
-    const parseBoolean = (value) => {
-      if (value === "true") return true;
-      if (value === "false") return false;
-      return undefined;
-    };
-
-    const isVerified = parseBoolean(req.query.isVerified);
-    const filter = {};
-
+    const isVerified =
+      req.query.isVerified === "true"
+        ? true
+        : req.query.isVerified === "false"
+          ? false
+          : undefined;
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.max(Number(req.query.limit) || 10, 1);
-    const skip = (page - 1) * limit;
-
-    // Only apply the filter when the query contains a real boolean value
-    if (typeof isVerified === "boolean") {
-      filter.isVerified = isVerified;
-    }
-    // TotalUsers for Pagination
-    const totalUsers = await User.countDocuments(filter);
-    // Return only the fields the admin needs to review user verification status
-    const users = await User.find(filter)
-      .select(
-        "fullname email avatar address role isVerified isBanned createdAt",
-      )
-      .skip(skip)
-      .limit(limit);
-
-    const totalPages = Math.ceil(totalUsers / limit);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
-
-    // When a specific boolean filter is provided, return only the matched users
-    if (typeof isVerified === "boolean") {
-      return res.status(200).json({
-        message: "User verification status fetched successfully",
-        appliedFilter: { isVerified },
-        count: users.length,
-        users,
-      });
-    }
-
-    const verifiedUsers = users.filter((user) => user.isVerified);
-    const unverifiedUsers = users.filter((user) => !user.isVerified);
-
-    const response = {
-      message: "User verification status fetched successfully",
-      appliedFilter:
-        typeof isVerified === "boolean" ? { isVerified } : "all users",
-      pagination: {
-        totalUsers,
-        totalPages,
-        currentPage: page,
-        limit,
-        hasPrevPage,
-        hasNextPage,
-      },
-      users,
-    };
-
-    if (hasNextPage) {
-      response.pagination.nextPage = page + 1;
-    }
-
-    if (hasPrevPage) {
-      response.pagination.prevPage = page - 1;
-    }
+    const response = await getUserVerificationStatusService({
+      isVerified,
+      page,
+      limit,
+    });
 
     return res.status(200).json(response);
   } catch (error) {
     console.error("Fetching verification status failed:", error);
-    return res.status(500).json({ error: "Internal server Error" });
+    return handleError(res, error);
   }
 };
 // Controllers Ended

@@ -1,6 +1,31 @@
-const Category = require("../models/CategorySchema");
 const { schemaCategory } = require("../helpers/ZodValidators/validator");
-const uploadCategoryImageToCloudinary = require("../helpers/Cloudinary/uploadCategoryImageToCloudinary");
+const {
+  getCategories,
+  createCategory,
+} = require("../services/categoryService");
+
+const handleError = (res, error) => {
+  const statusCode = error.statusCode || 500;
+  const message =
+    statusCode === 500 ? "Internal server Error" : error.message || "Error";
+
+  return res.status(statusCode).json({ error: message });
+};
+
+const ListCategories = async (req, res) => {
+  try {
+    const categories = await getCategories();
+
+    return res.status(200).json({
+      message: "Category list fetched successfully",
+      count: categories.length,
+      categories,
+    });
+  } catch (error) {
+    console.error("Fetching categories failed:", error);
+    return handleError(res, error);
+  }
+};
 
 const CreateCategory = async (req, res) => {
   const parsed = schemaCategory.safeParse(req.body);
@@ -14,25 +39,9 @@ const CreateCategory = async (req, res) => {
     }
 
     const { name } = parsed.data;
-
-    if (!req.file) {
-      return res.status(400).json({
-        error: "Thumbnail image is required",
-      });
-    }
-
-    const existingCategory = await Category.findOne({ name });
-
-    if (existingCategory) {
-      return res.status(409).json({
-        error: "Category already exists",
-      });
-    }
-    const uploadedImage = await uploadCategoryImageToCloudinary(req.file);
-
-    const newCategory = await Category.create({
+    const newCategory = await createCategory({
       name,
-      thumbnail: uploadedImage.secure_url,
+      file: req.file,
     });
 
     return res.status(201).json({
@@ -41,12 +50,11 @@ const CreateCategory = async (req, res) => {
     });
   } catch (error) {
     console.error("Creating category failed:", error);
-    return res.status(500).json({
-      error: "Internal server Error",
-    });
+    return handleError(res, error);
   }
 };
 
 module.exports = {
+  ListCategories,
   CreateCategory,
 };
