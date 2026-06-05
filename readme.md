@@ -175,6 +175,9 @@ Docker is a good next step for this project because it lets you run the backend,
 - Removed OTP resend tracking fields from `userSchema`
 - Added Redis config and smoke test support
 - Fixed OTP resend rate-limit flow logic
+- Split controller logic into dedicated service layers for auth and category flows
+- Added separate auth controllers for signup and login/session flows
+- Added controller test cleanup to silence expected 4xx error logs
 
 ### minor
 
@@ -184,4 +187,6 @@ Docker is a good next step for this project because it lets you run the backend,
 
 ### major
 
-- No major breaking auth change yet
+- Refactored the auth layer into separate controller and service files for signup, login, token, profile, and OTP flows
+- Removed the legacy `authService` compatibility index in favor of direct use-case imports
+- Split auth routes across dedicated signup and login controller files
