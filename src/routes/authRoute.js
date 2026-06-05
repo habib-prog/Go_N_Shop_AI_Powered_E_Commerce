@@ -4,14 +4,16 @@ const isAdmin = require("../middleware/isAdmin");
 const uploadAvatar = require("../middleware/uploadAvatar");
 const {
   signUp,
-  logIn,
   otpVerification,
   ResendOtp,
+} = require("../controllers/signupController");
+const {
+  logIn,
   refreshAccessToken,
   profile,
   updateProfile,
   getUserVerificationStatus,
-} = require("../controllers/authController");
+} = require("../controllers/loginController");
 const router = express.Router();
 router.post("/signup", signUp);
 router.post("/login", logIn);

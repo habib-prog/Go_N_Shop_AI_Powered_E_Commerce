@@ -1,10 +1,14 @@
 // Import Node's path utility So we can build stable absolute paths for our local modules.
 const path = require("path");
 
-// Build the absolute path to the auth controller file we want to test.
-const controllerPath = path.resolve(
+// Build the absolute paths to the split auth controller files we want to test.
+const signupControllerPath = path.resolve(
   __dirname,
-  "../src/controllers/authController.js",
+  "../src/controllers/signupController.js",
+);
+const loginControllerPath = path.resolve(
+  __dirname,
+  "../src/controllers/loginController.js",
 );
 // Build the absolute path to the mail service dependency that we want to replace in tests.
 const mailServicePath = path.resolve(
@@ -79,7 +83,8 @@ const createResponse = () => {
 };
 
 // Hold the currently loaded controller functions so each test can call them directly.
-let authController;
+let signupController;
+let loginController;
 
 // Set up fresh mocks and a fresh controller instance before every test case runs.
 beforeEach(() => {
@@ -97,16 +102,19 @@ beforeEach(() => {
   mockLocalModule(refreshTokenPath, generateRefreshTokenMock);
   // Inject the mocked user model before the controller is required.
   mockLocalModule(userModelPath, userModelMock);
-  // Remove the controller from cache so it captures the freshly mocked dependencies above.
-  clearLocalModule(controllerPath);
-  // Require the controller after the mocks are in place so its dependencies are replaced.
-  authController = require(controllerPath);
+  // Remove the controller files from cache so they capture the freshly mocked dependencies above.
+  clearLocalModule(signupControllerPath);
+  clearLocalModule(loginControllerPath);
+  // Require the controllers after the mocks are in place so their dependencies are replaced.
+  signupController = require(signupControllerPath);
+  loginController = require(loginControllerPath);
 });
 
 // Clean up the mocked modules after every test so nothing leaks into other test files later.
 afterEach(() => {
-  // Remove the controller from cache after the test finishes.
-  clearLocalModule(controllerPath);
+  // Remove the controller files from cache after the test finishes.
+  clearLocalModule(signupControllerPath);
+  clearLocalModule(loginControllerPath);
   // Remove the mocked mail service from cache after the test finishes.
   clearLocalModule(mailServicePath);
   // Remove the mocked OTP helper from cache after the test finishes.
@@ -155,7 +163,7 @@ describe("authController", () => {
       mailServiceMock.mockResolvedValue(undefined);
 
       // Run the signup controller with the arranged request and response objects.
-      await authController.signUp(req, res);
+      await signupController.signUp(req, res);
 
       // Confirm the duplicate-email lookup used the submitted email address.
       expect(userModelMock.findOne).toHaveBeenCalledWith({
@@ -232,7 +240,7 @@ describe("authController", () => {
       generateRefreshTokenMock.mockReturnValue("refresh-token-value");
 
       // Run the login controller with the arranged request and response objects.
-      await authController.logIn(req, res);
+      await loginController.logIn(req, res);
 
       // Confirm the controller looked up the user by the submitted email.
       expect(userModelMock.findOne).toHaveBeenCalledWith({

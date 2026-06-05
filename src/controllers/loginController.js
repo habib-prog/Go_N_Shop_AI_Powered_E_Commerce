@@ -1,12 +1,6 @@
 const {
-  signUpSchema,
   loginSchema,
 } = require("../helpers/ZodValidators/validator");
-const {
-  signUpUser,
-  resendOtp: resendOtpService,
-  verifyOtp: verifyOtpService,
-} = require("../services/auth/register.service");
 const loginUser = require("../services/auth/login.service");
 const refreshAccessTokenService = require("../services/auth/token.service");
 const {
@@ -23,77 +17,7 @@ const handleError = (res, error) => {
   return res.status(statusCode).json({ error: message });
 };
 
-const signUp = async (req, res) => {
-  const parsed = signUpSchema.safeParse(req.body);
-
-  try {
-    if (!parsed.success) {
-      return res.status(400).json({
-        message: "Validation Failed",
-        errors: parsed.error.flatten().fieldErrors,
-      });
-    }
-
-    const { fullname, email, password, avatar, address } = parsed.data;
-
-    const user = await signUpUser({
-      fullname,
-      email,
-      password,
-      avatar,
-      address,
-    });
-
-    return res.status(201).json({
-      message: "Sign Up successfull",
-      user: {
-        fullname: user.fullname,
-        email: user.email,
-        avatar: user.avatar,
-        address: user.address,
-      },
-    });
-  } catch (error) {
-    console.error("Sign up failed:", error);
-    return handleError(res, error);
-  }
-};
-const ResendOtp = async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: "Email is required" });
-
-  try {
-    await resendOtpService(email);
-
-    return res.status(200).json({
-      message: "OTP resent successfully",
-    });
-  } catch (error) {
-    console.error("Resend OTP failed:", error);
-    return handleError(res, error);
-  }
-};
-const otpVerification = async (req, res) => {
-  const { email, otp } = req.body;
-  if (!email || !otp)
-    return res.status(400).json({ error: "email and otp is required" });
-  try {
-    const user = await verifyOtpService({ email, otp });
-
-    return res.status(200).json({
-      message: "Email verification successful!",
-      user: {
-        fullname: user.fullname,
-        email: user.email,
-        isVerified: true,
-      },
-    });
-  } catch (error) {
-    console.error("OTP Verification failed:", error);
-    return handleError(res, error);
-  }
-};
-
+// Login flow: validate credentials and set auth cookies.
 const logIn = async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
 
@@ -144,6 +68,7 @@ const logIn = async (req, res) => {
   }
 };
 
+// Token flow: exchange refresh token for a new access token.
 const refreshAccessToken = async (req, res) => {
   const refreshToken = req.cookies?.refreshToken;
 
@@ -186,6 +111,7 @@ const refreshAccessToken = async (req, res) => {
   }
 };
 
+// Profile flow: fetch the currently logged-in user's public profile.
 const profile = async (req, res) => {
   try {
     const userId = req.user?.userId;
@@ -205,6 +131,7 @@ const profile = async (req, res) => {
   }
 };
 
+// Profile flow: update fullname/avatar for the current user.
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user?.userId;
@@ -235,6 +162,7 @@ const updateProfile = async (req, res) => {
   }
 };
 
+// Admin flow: list users by verification state.
 const getUserVerificationStatus = async (req, res) => {
   try {
     const isVerified =
@@ -257,12 +185,9 @@ const getUserVerificationStatus = async (req, res) => {
     return handleError(res, error);
   }
 };
-// Controllers Ended
+
 module.exports = {
-  signUp,
   logIn,
-  otpVerification,
-  ResendOtp,
   refreshAccessToken,
   profile,
   updateProfile,
