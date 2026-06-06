@@ -34,7 +34,7 @@ const ProductSchema = new mongoose.Schema({
     // The id will be coming from the SubCategory model eg. Apple, Samsung, Xiaomi, Huawei etc..
     subCategory:{
         type: mongoose.Schema.Types.ObjectId,
-        ref:"SubCategory",
+        ref:"Category",
         default: null,
     },
     // Global branding sku for the product eg. iphone17pro 256gb
