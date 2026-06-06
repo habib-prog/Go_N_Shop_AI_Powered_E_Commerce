@@ -19,6 +19,7 @@ const categorySchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
+      lowercase:true,
     },
     // The image path or URL representing the category
     image: {
