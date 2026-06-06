@@ -4,6 +4,7 @@ const {
   createCategory,
 } = require("../services/categoryService");
 
+// Custom Error
 const handleError = (res, error) => {
   const statusCode = error.statusCode || 500;
   const message =
@@ -12,6 +13,7 @@ const handleError = (res, error) => {
   return res.status(statusCode).json({ error: message });
 };
 
+// List Categories
 const ListCategories = async (req, res) => {
   try {
     const categories = await getCategories();
@@ -27,6 +29,7 @@ const ListCategories = async (req, res) => {
   }
 };
 
+// Create Category
 const CreateCategory = async (req, res) => {
   const parsed = schemaCategory.safeParse(req.body);
 
@@ -38,9 +41,11 @@ const CreateCategory = async (req, res) => {
       });
     }
 
-    const { name } = parsed.data;
+    const { name , slug , parentId } = parsed.data;
     const newCategory = await createCategory({
       name,
+      slug,
+      parentId: parentId || null,
       file: req.file,
     });
 
