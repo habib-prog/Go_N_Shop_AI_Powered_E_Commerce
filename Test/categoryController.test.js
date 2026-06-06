@@ -73,6 +73,7 @@ describe("categoryController", () => {
       const req = {
         body: {
           name: "Smartphones",
+          slug: "smartphones",
         },
         file: {
           buffer: Buffer.from("fake-image"),
@@ -83,7 +84,9 @@ describe("categoryController", () => {
       const createdCategory = {
         _id: "category-id-1",
         name: "Smartphones",
-        thumbnail: "https://example.com/smartphones.jpg",
+        slug: "smartphones",
+        image: "https://example.com/smartphones.jpg",
+        parentId: null,
       };
       const uploadedImage = {
         secure_url: "https://example.com/smartphones.jpg",
@@ -102,7 +105,9 @@ describe("categoryController", () => {
       expect(uploadCategoryImageToCloudinaryMock).toHaveBeenCalledWith(req.file);
       expect(categoryModelMock.create).toHaveBeenCalledWith({
         name: "Smartphones",
-        thumbnail: "https://example.com/smartphones.jpg",
+        slug: "smartphones",
+        image: "https://example.com/smartphones.jpg",
+        parentId: null,
       });
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
@@ -115,6 +120,7 @@ describe("categoryController", () => {
       const req = {
         body: {
           name: "TV",
+          slug: "smart-tv",
         },
       };
       const res = createResponse();
@@ -136,6 +142,7 @@ describe("categoryController", () => {
       const req = {
         body: {
           name: "Laptops",
+          slug: "laptops",
         },
         file: {
           buffer: Buffer.from("fake-image"),
