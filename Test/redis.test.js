@@ -1,7 +1,7 @@
-const path = require("path");
+const path = require('path');
 
-const redisModulePath = require.resolve("redis");
-const redisConfigPath = path.resolve(__dirname, "../src/config/redis.js");
+const redisModulePath = require.resolve('redis');
+const redisConfigPath = path.resolve(__dirname, '../src/config/redis.js');
 
 const mockRedisClient = {
   on: vi.fn(),
@@ -24,7 +24,7 @@ const clearLocalModule = (modulePath) => {
   delete require.cache[modulePath];
 };
 
-describe("redis config", () => {
+describe('redis config', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
@@ -38,27 +38,27 @@ describe("redis config", () => {
     clearLocalModule(redisModulePath);
   });
 
-  it("creates a redis client with the default local url and connects it", async () => {
+  it('creates a redis client with the default local url and connects it', async () => {
     const redis = require(redisConfigPath);
 
     expect(mockCreateClient).toHaveBeenCalledWith({
-      url: "redis://127.0.0.1:6379",
+      url: 'redis://127.0.0.1:6379',
     });
     expect(redis).toBe(mockRedisClient);
     expect(mockRedisClient.on).toHaveBeenCalledWith(
-      "error",
-      expect.any(Function),
+      'error',
+      expect.any(Function)
     );
     expect(mockRedisClient.connect).toHaveBeenCalledTimes(1);
   });
 
-  it("uses REDIS_URL when it is provided", async () => {
-    process.env.REDIS_URL = "redis://localhost:6380";
+  it('uses REDIS_URL when it is provided', async () => {
+    process.env.REDIS_URL = 'redis://localhost:6380';
 
     require(redisConfigPath);
 
     expect(mockCreateClient).toHaveBeenCalledWith({
-      url: "redis://localhost:6380",
+      url: 'redis://localhost:6380',
     });
     expect(mockRedisClient.connect).toHaveBeenCalledTimes(1);
   });

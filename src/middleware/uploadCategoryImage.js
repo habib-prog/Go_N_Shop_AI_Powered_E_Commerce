@@ -1,5 +1,5 @@
 // 01- Importing the library for uploading image (Multer)
-const multer = require("multer");
+const multer = require('multer');
 
 // 02- Declearing where the file will be stored after uploading (Ram)
 const storage = multer.memoryStorage();
@@ -7,10 +7,10 @@ const storage = multer.memoryStorage();
 // 03- Checking the file type
 
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith("image/")) {
+  if (file.mimetype.startsWith('image/')) {
     return cb(null, true);
   }
-  return cb(new Error("Only image files are allowed"));
+  return cb(new Error('Only image files are allowed'));
 };
 
 // 04- Main Upload Func()

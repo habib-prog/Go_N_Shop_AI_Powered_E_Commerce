@@ -1,9 +1,9 @@
-const dotenv = require("dotenv");
+const dotenv = require('dotenv');
 dotenv.config();
-const cookieParser = require("cookie-parser");
-const express = require("express");
-const router = require("./src/routes/index");
-const DataBase = require("./src/config/database");
+const cookieParser = require('cookie-parser');
+const express = require('express');
+const router = require('./src/routes/index');
+const DataBase = require('./src/config/database');
 
 const app = express();
 app.use(express.json());

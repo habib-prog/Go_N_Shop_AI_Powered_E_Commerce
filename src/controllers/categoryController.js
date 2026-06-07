@@ -1,14 +1,14 @@
-const { schemaCategory } = require("../helpers/ZodValidators/validator");
+const { schemaCategory } = require('../helpers/ZodValidators/validator');
 const {
   getCategories,
   createCategory,
-} = require("../services/categoryService");
+} = require('../services/categoryService');
 
 // Custom Error
 const handleError = (res, error) => {
   const statusCode = error.statusCode || 500;
   const message =
-    statusCode === 500 ? "Internal server Error" : error.message || "Error";
+    statusCode === 500 ? 'Internal server Error' : error.message || 'Error';
 
   return res.status(statusCode).json({ error: message });
 };
@@ -19,12 +19,12 @@ const ListCategories = async (req, res) => {
     const categories = await getCategories();
 
     return res.status(200).json({
-      message: "Category list fetched successfully",
+      message: 'Category list fetched successfully',
       count: categories.length,
       categories,
     });
   } catch (error) {
-    console.error("Fetching categories failed:", error);
+    console.error('Fetching categories failed:', error);
     return handleError(res, error);
   }
 };
@@ -36,12 +36,12 @@ const CreateCategory = async (req, res) => {
   try {
     if (!parsed.success) {
       return res.status(400).json({
-        error: "Validation Failed",
+        error: 'Validation Failed',
         errors: parsed.error.flatten().fieldErrors,
       });
     }
 
-    const { name , slug , parentId } = parsed.data;
+    const { name, slug, parentId } = parsed.data;
     const newCategory = await createCategory({
       name,
       slug,
@@ -50,11 +50,11 @@ const CreateCategory = async (req, res) => {
     });
 
     return res.status(201).json({
-      message: "Category created successfully",
+      message: 'Category created successfully',
       category: newCategory,
     });
   } catch (error) {
-    console.error("Creating category failed:", error);
+    console.error('Creating category failed:', error);
     return handleError(res, error);
   }
 };

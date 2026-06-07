@@ -12,7 +12,8 @@
     "dev": "node --watch server.js",
     "dev:api": "node --watch server.js",
     "dev:web": "npm --workspace=apps/web run dev",
-    "test": "vitest"
+    "test": "vitest",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -36,6 +37,7 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "prettier": "^3.8.3",
     "vitest": "^4.1.7"
   }
 }

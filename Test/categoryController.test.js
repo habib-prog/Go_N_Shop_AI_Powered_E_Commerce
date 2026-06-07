@@ -1,16 +1,16 @@
-const path = require("path");
+const path = require('path');
 
 const controllerPath = path.resolve(
   __dirname,
-  "../src/controllers/categoryController.js",
+  '../src/controllers/categoryController.js'
 );
 const categoryModelPath = path.resolve(
   __dirname,
-  "../src/models/CategorySchema.js",
+  '../src/models/CategorySchema.js'
 );
 const uploadCategoryImageToCloudinaryPath = path.resolve(
   __dirname,
-  "../src/helpers/Cloudinary/uploadCategoryImageToCloudinary.js",
+  '../src/helpers/Cloudinary/uploadCategoryImageToCloudinary.js'
 );
 
 const categoryModelMock = {
@@ -49,11 +49,11 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.resetModules();
   // Silence expected error logs so the test output stays clean for handled 4xx cases.
-  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   mockLocalModule(categoryModelPath, categoryModelMock);
   mockLocalModule(
     uploadCategoryImageToCloudinaryPath,
-    uploadCategoryImageToCloudinaryMock,
+    uploadCategoryImageToCloudinaryMock
   );
   clearLocalModule(controllerPath);
   categoryController = require(controllerPath);
@@ -67,30 +67,30 @@ afterEach(() => {
   clearLocalModule(uploadCategoryImageToCloudinaryPath);
 });
 
-describe("categoryController", () => {
-  describe("CreateCategory", () => {
-    it("creates a category and returns the created response", async () => {
+describe('categoryController', () => {
+  describe('CreateCategory', () => {
+    it('creates a category and returns the created response', async () => {
       const req = {
         body: {
-          name: "Smartphones",
-          slug: "smartphones",
+          name: 'Smartphones',
+          slug: 'smartphones',
         },
         file: {
-          buffer: Buffer.from("fake-image"),
-          mimetype: "image/jpeg",
+          buffer: Buffer.from('fake-image'),
+          mimetype: 'image/jpeg',
         },
       };
       const res = createResponse();
       const createdCategory = {
-        _id: "category-id-1",
-        name: "Smartphones",
-        slug: "smartphones",
-        image: "https://example.com/smartphones.jpg",
+        _id: 'category-id-1',
+        name: 'Smartphones',
+        slug: 'smartphones',
+        image: 'https://example.com/smartphones.jpg',
         parentId: null,
       };
       const uploadedImage = {
-        secure_url: "https://example.com/smartphones.jpg",
-        public_id: "category/smartphones",
+        secure_url: 'https://example.com/smartphones.jpg',
+        public_id: 'category/smartphones',
       };
 
       categoryModelMock.findOne.mockResolvedValue(null);
@@ -100,27 +100,29 @@ describe("categoryController", () => {
       await categoryController.CreateCategory(req, res);
 
       expect(categoryModelMock.findOne).toHaveBeenCalledWith({
-        name: "Smartphones",
+        name: 'Smartphones',
       });
-      expect(uploadCategoryImageToCloudinaryMock).toHaveBeenCalledWith(req.file);
+      expect(uploadCategoryImageToCloudinaryMock).toHaveBeenCalledWith(
+        req.file
+      );
       expect(categoryModelMock.create).toHaveBeenCalledWith({
-        name: "Smartphones",
-        slug: "smartphones",
-        image: "https://example.com/smartphones.jpg",
+        name: 'Smartphones',
+        slug: 'smartphones',
+        image: 'https://example.com/smartphones.jpg',
         parentId: null,
       });
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
-        message: "Category created successfully",
+        message: 'Category created successfully',
         category: createdCategory,
       });
     });
 
-    it("returns validation errors when the request body is invalid", async () => {
+    it('returns validation errors when the request body is invalid', async () => {
       const req = {
         body: {
-          name: "TV",
-          slug: "smart-tv",
+          name: 'TV',
+          slug: 'smart-tv',
         },
       };
       const res = createResponse();
@@ -131,41 +133,41 @@ describe("categoryController", () => {
       expect(categoryModelMock.create).not.toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
-        error: "Validation Failed",
+        error: 'Validation Failed',
         errors: {
-          name: ["Name must be minimum of 3 charecters"],
+          name: ['Name must be minimum of 3 charecters'],
         },
       });
     });
 
-    it("returns 409 when the category already exists", async () => {
+    it('returns 409 when the category already exists', async () => {
       const req = {
         body: {
-          name: "Laptops",
-          slug: "laptops",
+          name: 'Laptops',
+          slug: 'laptops',
         },
         file: {
-          buffer: Buffer.from("fake-image"),
-          mimetype: "image/jpeg",
+          buffer: Buffer.from('fake-image'),
+          mimetype: 'image/jpeg',
         },
       };
       const res = createResponse();
 
       categoryModelMock.findOne.mockResolvedValue({
-        _id: "category-id-2",
-        name: "Laptops",
+        _id: 'category-id-2',
+        name: 'Laptops',
       });
 
       await categoryController.CreateCategory(req, res);
 
       expect(categoryModelMock.findOne).toHaveBeenCalledWith({
-        name: "Laptops",
+        name: 'Laptops',
       });
       expect(uploadCategoryImageToCloudinaryMock).not.toHaveBeenCalled();
       expect(categoryModelMock.create).not.toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(409);
       expect(res.json).toHaveBeenCalledWith({
-        error: "Category already exists",
+        error: 'Category already exists',
       });
     });
   });

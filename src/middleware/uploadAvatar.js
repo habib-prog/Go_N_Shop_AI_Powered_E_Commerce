@@ -1,13 +1,13 @@
-const multer = require("multer");
+const multer = require('multer');
 
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith("image/")) {
+  if (file.mimetype.startsWith('image/')) {
     return cb(null, true);
   }
 
-  return cb(new Error("Only image files are allowed"));
+  return cb(new Error('Only image files are allowed'));
 };
 
 const uploadAvatar = multer({

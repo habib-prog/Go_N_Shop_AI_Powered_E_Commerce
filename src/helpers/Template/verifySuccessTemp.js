@@ -14,7 +14,7 @@ const verifySuccessTemplate = (name) => {
             </div>
 
             <p style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.82); margin-bottom: 18px;">
-                Hello ${name || "User"}, your email has been verified successfully.
+                Hello ${name || 'User'}, your email has been verified successfully.
             </p>
 
             <p style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.82); margin-bottom: 28px;">

@@ -1,4 +1,4 @@
-const jwt = require("jsonwebtoken");
+const jwt = require('jsonwebtoken');
 
 const generateRefreshToken = (user) => {
   return jwt.sign(
@@ -9,8 +9,8 @@ const generateRefreshToken = (user) => {
     },
     process.env.JWT_REFRESH_SECRET,
     {
-      expiresIn: process.env.JWT_REFRESH_EXPIRES || "30d",
-    },
+      expiresIn: process.env.JWT_REFRESH_EXPIRES || '30d',
+    }
   );
 };
 

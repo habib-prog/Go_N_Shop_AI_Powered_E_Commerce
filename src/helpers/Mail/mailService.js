@@ -1,8 +1,8 @@
-const nodemailer = require("nodemailer");
+const nodemailer = require('nodemailer');
 
 // Create a transporter using SMTP
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  service: 'gmail',
   port: 465,
   secure: true, // use SSL
   auth: {
@@ -24,7 +24,7 @@ const mailService = async ({ email, sub, otp, msg, template }) => {
       html: template, // HTML body
     });
   } catch (err) {
-    console.error("Error while sending mail:", err);
+    console.error('Error while sending mail:', err);
     throw err;
   }
 };
