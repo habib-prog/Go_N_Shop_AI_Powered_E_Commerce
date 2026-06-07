@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+const crypto = require("crypto");
 
 function generateSecureOTP() {
   // Generates a cryptographically secure random integer between 100000 and 999999

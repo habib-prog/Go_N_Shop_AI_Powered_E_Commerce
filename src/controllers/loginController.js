@@ -1,16 +1,16 @@
-const { loginSchema } = require('../helpers/ZodValidators/validator');
-const loginUser = require('../services/auth/login.service');
-const refreshAccessTokenService = require('../services/auth/token.service');
+const { loginSchema } = require("../helpers/ZodValidators/validator");
+const loginUser = require("../services/auth/login.service");
+const refreshAccessTokenService = require("../services/auth/token.service");
 const {
   getProfile: getProfileService,
   updateProfile: updateProfileService,
   getUserVerificationStatus: getUserVerificationStatusService,
-} = require('../services/auth/profile.service');
+} = require("../services/auth/profile.service");
 
 const handleError = (res, error) => {
   const statusCode = error.statusCode || 500;
   const message =
-    statusCode === 500 ? 'Internal server Error' : error.message || 'Error';
+    statusCode === 500 ? "Internal server Error" : error.message || "Error";
 
   return res.status(statusCode).json({ error: message });
 };
@@ -22,7 +22,7 @@ const logIn = async (req, res) => {
   try {
     if (!parsed.success) {
       return res.status(400).json({
-        message: 'Validation Failed',
+        message: "Validation Failed",
         errors: parsed.error.flatten().fieldErrors,
       });
     }
@@ -34,22 +34,22 @@ const logIn = async (req, res) => {
       password,
     });
 
-    res.cookie('accessToken', accessToken, {
+    res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     return res.status(200).json({
-      message: 'Login successful',
+      message: "Login successful",
       user: {
         _id: user._id,
         fullname: user.fullname,
@@ -61,7 +61,7 @@ const logIn = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Login failed:', error);
+    console.error("Login failed:", error);
     return handleError(res, error);
   }
 };
@@ -71,41 +71,41 @@ const refreshAccessToken = async (req, res) => {
   const refreshToken = req.cookies?.refreshToken;
 
   if (!refreshToken) {
-    return res.status(401).json({ error: 'Refresh token missing' });
+    return res.status(401).json({ error: "Refresh token missing" });
   }
 
   try {
     const { accessToken: newAccessToken } =
       await refreshAccessTokenService(refreshToken);
 
-    res.cookie('accessToken', newAccessToken, {
+    res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return res.status(200).json({
-      message: 'Access token refreshed successfully',
+      message: "Access token refreshed successfully",
     });
   } catch (error) {
-    console.error('Refresh token failed:', error);
-    res.clearCookie('accessToken', {
+    console.error("Refresh token failed:", error);
+    res.clearCookie("accessToken", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
     });
-    res.clearCookie('refreshToken', {
+    res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
     });
 
     return handleError(res, {
       statusCode: error.statusCode || 401,
       message: error.statusCode
         ? error.message
-        : 'Invalid or expired refresh token',
+        : "Invalid or expired refresh token",
     });
   }
 };
@@ -115,17 +115,17 @@ const profile = async (req, res) => {
   try {
     const userId = req.user?.userId;
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized access' });
+      return res.status(401).json({ error: "Unauthorized access" });
     }
 
     const user = await getProfileService(userId);
 
     return res.status(200).json({
-      message: 'Profile fetched successfully',
+      message: "Profile fetched successfully",
       user,
     });
   } catch (error) {
-    console.error('Profile fetch failed:', error);
+    console.error("Profile fetch failed:", error);
     return handleError(res, error);
   }
 };
@@ -137,12 +137,12 @@ const updateProfile = async (req, res) => {
     const { fullname } = req.body;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized access' });
+      return res.status(401).json({ error: "Unauthorized access" });
     }
 
     if (!fullname && !req.file) {
       return res.status(400).json({
-        error: 'Provide fullname or avatar to update the profile',
+        error: "Provide fullname or avatar to update the profile",
       });
     }
     const user = await updateProfileService({
@@ -152,11 +152,11 @@ const updateProfile = async (req, res) => {
     });
 
     return res.status(200).json({
-      message: 'Profile updated successfully',
+      message: "Profile updated successfully",
       user,
     });
   } catch (error) {
-    console.error('Profile update failed:', error);
+    console.error("Profile update failed:", error);
     return handleError(res, error);
   }
 };
@@ -165,9 +165,9 @@ const updateProfile = async (req, res) => {
 const getUserVerificationStatus = async (req, res) => {
   try {
     const isVerified =
-      req.query.isVerified === 'true'
+      req.query.isVerified === "true"
         ? true
-        : req.query.isVerified === 'false'
+        : req.query.isVerified === "false"
           ? false
           : undefined;
     const page = Math.max(Number(req.query.page) || 1, 1);
@@ -180,7 +180,7 @@ const getUserVerificationStatus = async (req, res) => {
 
     return res.status(200).json(response);
   } catch (error) {
-    console.error('Fetching verification status failed:', error);
+    console.error("Fetching verification status failed:", error);
     return handleError(res, error);
   }
 };

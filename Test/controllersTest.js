@@ -1,34 +1,34 @@
 // Import Node's path utility So we can build stable absolute paths for our local modules.
-const path = require('path');
+const path = require("path");
 
 // Build the absolute paths to the split auth controller files we want to test.
 const signupControllerPath = path.resolve(
   __dirname,
-  '../src/controllers/signupController.js'
+  "../src/controllers/signupController.js",
 );
 const loginControllerPath = path.resolve(
   __dirname,
-  '../src/controllers/loginController.js'
+  "../src/controllers/loginController.js",
 );
 // Build the absolute path to the mail service dependency that we want to replace in tests.
 const mailServicePath = path.resolve(
   __dirname,
-  '../src/helpers/Mail/mailService.js'
+  "../src/helpers/Mail/mailService.js",
 );
 // Build the absolute path to the OTP helper dependency that we want to replace in tests.
-const otpPath = path.resolve(__dirname, '../src/helpers/Otp/otp.js');
+const otpPath = path.resolve(__dirname, "../src/helpers/Otp/otp.js");
 // Build the absolute path to the access-token helper dependency that we want to replace in tests.
 const accessTokenPath = path.resolve(
   __dirname,
-  '../src/helpers/Jwt/generateAccessToken.js'
+  "../src/helpers/Jwt/generateAccessToken.js",
 );
 // Build the absolute path to the refresh-token helper dependency that we want to replace in tests.
 const refreshTokenPath = path.resolve(
   __dirname,
-  '../src/helpers/Jwt/generateRefreshToken.js'
+  "../src/helpers/Jwt/generateRefreshToken.js",
 );
 // Build the absolute path to the user model dependency that we want to replace in tests.
-const userModelPath = path.resolve(__dirname, '../src/models/userSchema.js');
+const userModelPath = path.resolve(__dirname, "../src/models/userSchema.js");
 
 // Create a reusable mail-service spy so we can assert when signup sends an email.
 const mailServiceMock = vi.fn();
@@ -128,33 +128,33 @@ afterEach(() => {
 });
 
 // Group all auth-controller tests together so the output stays easy to scan.
-describe('authController', () => {
+describe("authController", () => {
   // Group the signup tests together because they share the same controller entry point.
-  describe('signUp', () => {
+  describe("signUp", () => {
     // Verify that signup returns 201 and the expected user payload when the request is valid.
-    it('creates a user and returns the public signup response', async () => {
+    it("creates a user and returns the public signup response", async () => {
       // Build a request body that satisfies the Zod signup schema in the controller.
       const req = {
         body: {
-          fullname: 'Test User',
-          email: 'test@example.com',
-          password: 'secret1',
-          avatar: 'https://example.com/avatar.png',
-          address: 'Dhaka',
+          fullname: "Test User",
+          email: "test@example.com",
+          password: "secret1",
+          avatar: "https://example.com/avatar.png",
+          address: "Dhaka",
         },
       };
       // Create a fresh fake response object for this individual test case.
       const res = createResponse();
       // Create a fake database user document that mirrors the public fields returned by signup.
       const createdUser = {
-        fullname: 'Test User',
-        email: 'test@example.com',
-        avatar: 'https://example.com/avatar.png',
-        address: 'Dhaka',
+        fullname: "Test User",
+        email: "test@example.com",
+        avatar: "https://example.com/avatar.png",
+        address: "Dhaka",
       };
 
       // Make the OTP helper return a predictable code so assertions stay stable.
-      generateSecureOTPMock.mockReturnValue('654321');
+      generateSecureOTPMock.mockReturnValue("654321");
       // Make the first lookup behave like no user exists with this email yet.
       userModelMock.findOne.mockResolvedValue(null);
       // Make user creation resolve to our fake stored user document.
@@ -167,19 +167,19 @@ describe('authController', () => {
 
       // Confirm the duplicate-email lookup used the submitted email address.
       expect(userModelMock.findOne).toHaveBeenCalledWith({
-        email: 'test@example.com',
+        email: "test@example.com",
       });
       // Confirm the created user payload included the generated OTP and a real expiry timestamp.
       expect(userModelMock.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          fullname: 'Test User',
-          email: 'test@example.com',
-          password: 'secret1',
-          avatar: 'https://example.com/avatar.png',
-          address: 'Dhaka',
-          otp: '654321',
+          fullname: "Test User",
+          email: "test@example.com",
+          password: "secret1",
+          avatar: "https://example.com/avatar.png",
+          address: "Dhaka",
+          otp: "654321",
           otpExp: expect.any(Date),
-        })
+        }),
       );
       // Confirm the signup flow attempted to send the verification email.
       expect(mailServiceMock).toHaveBeenCalledTimes(1);
@@ -187,38 +187,38 @@ describe('authController', () => {
       expect(res.status).toHaveBeenCalledWith(201);
       // Confirm the controller returned only the public user fields in the JSON response.
       expect(res.json).toHaveBeenCalledWith({
-        message: 'Sign Up successfull',
+        message: "Sign Up successfull",
         user: {
-          fullname: 'Test User',
-          email: 'test@example.com',
-          avatar: 'https://example.com/avatar.png',
-          address: 'Dhaka',
+          fullname: "Test User",
+          email: "test@example.com",
+          avatar: "https://example.com/avatar.png",
+          address: "Dhaka",
         },
       });
     });
   });
 
   // Group the login tests together because they share the same controller entry point.
-  describe('logIn', () => {
+  describe("logIn", () => {
     // Verify that login stores both cookies and returns the public user payload for a valid account.
-    it('logs in a verified user and sets auth cookies', async () => {
+    it("logs in a verified user and sets auth cookies", async () => {
       // Build a request body that satisfies the Zod login schema in the controller.
       const req = {
         body: {
-          email: 'test@example.com',
-          password: 'secret1',
+          email: "test@example.com",
+          password: "secret1",
         },
       };
       // Create a fresh fake response object for this individual test case.
       const res = createResponse();
       // Create a fake user document with the fields and method that the login controller expects.
       const foundUser = {
-        _id: 'user-id-1',
-        fullname: 'Test User',
-        email: 'test@example.com',
-        avatar: 'https://example.com/avatar.png',
-        address: 'Dhaka',
-        role: 'user',
+        _id: "user-id-1",
+        fullname: "Test User",
+        email: "test@example.com",
+        avatar: "https://example.com/avatar.png",
+        address: "Dhaka",
+        role: "user",
         isVerified: true,
         isBanned: false,
         comparePassword: vi.fn().mockResolvedValue(true),
@@ -229,57 +229,57 @@ describe('authController', () => {
       };
 
       // Set the JWT secrets expected by the login controller before token generation happens.
-      process.env.JWT_ACCESS_SECRET = 'access-secret-for-tests';
+      process.env.JWT_ACCESS_SECRET = "access-secret-for-tests";
       // Set the refresh secret expected by the login controller before token generation happens.
-      process.env.JWT_REFRESH_SECRET = 'refresh-secret-for-tests';
+      process.env.JWT_REFRESH_SECRET = "refresh-secret-for-tests";
       // Make the user lookup return our fake query object with a .select method.
       userModelMock.findOne.mockReturnValue(selectQuery);
       // Make the access-token helper return a predictable token value.
-      generateAccessTokenMock.mockReturnValue('access-token-value');
+      generateAccessTokenMock.mockReturnValue("access-token-value");
       // Make the refresh-token helper return a predictable token value.
-      generateRefreshTokenMock.mockReturnValue('refresh-token-value');
+      generateRefreshTokenMock.mockReturnValue("refresh-token-value");
 
       // Run the login controller with the arranged request and response objects.
       await loginController.logIn(req, res);
 
       // Confirm the controller looked up the user by the submitted email.
       expect(userModelMock.findOne).toHaveBeenCalledWith({
-        email: 'test@example.com',
+        email: "test@example.com",
       });
       // Confirm the controller requested the hidden password field from the model.
-      expect(selectQuery.select).toHaveBeenCalledWith('+password');
+      expect(selectQuery.select).toHaveBeenCalledWith("+password");
       // Confirm the controller compared the submitted password with the stored password.
-      expect(foundUser.comparePassword).toHaveBeenCalledWith('secret1');
+      expect(foundUser.comparePassword).toHaveBeenCalledWith("secret1");
       // Confirm the controller stored the access token as an HTTP-only cookie.
       expect(res.cookie).toHaveBeenCalledWith(
-        'accessToken',
-        'access-token-value',
+        "accessToken",
+        "access-token-value",
         expect.objectContaining({
           httpOnly: true,
-          sameSite: 'strict',
-        })
+          sameSite: "strict",
+        }),
       );
       // Confirm the controller stored the refresh token as an HTTP-only cookie.
       expect(res.cookie).toHaveBeenCalledWith(
-        'refreshToken',
-        'refresh-token-value',
+        "refreshToken",
+        "refresh-token-value",
         expect.objectContaining({
           httpOnly: true,
-          sameSite: 'strict',
-        })
+          sameSite: "strict",
+        }),
       );
       // Confirm the controller responded with the success status code.
       expect(res.status).toHaveBeenCalledWith(200);
       // Confirm the controller returned the expected public login payload.
       expect(res.json).toHaveBeenCalledWith({
-        message: 'Login successful',
+        message: "Login successful",
         user: {
-          _id: 'user-id-1',
-          fullname: 'Test User',
-          email: 'test@example.com',
-          avatar: 'https://example.com/avatar.png',
-          address: 'Dhaka',
-          role: 'user',
+          _id: "user-id-1",
+          fullname: "Test User",
+          email: "test@example.com",
+          avatar: "https://example.com/avatar.png",
+          address: "Dhaka",
+          role: "user",
           isVerified: true,
         },
       });

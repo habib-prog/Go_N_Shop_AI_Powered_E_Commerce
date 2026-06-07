@@ -1,14 +1,14 @@
-const { signUpSchema } = require('../helpers/ZodValidators/validator');
+const { signUpSchema } = require("../helpers/ZodValidators/validator");
 const {
   signUpUser,
   resendOtp: resendOtpService,
   verifyOtp: verifyOtpService,
-} = require('../services/auth/register.service');
+} = require("../services/auth/register.service");
 
 const handleError = (res, error) => {
   const statusCode = error.statusCode || 500;
   const message =
-    statusCode === 500 ? 'Internal server Error' : error.message || 'Error';
+    statusCode === 500 ? "Internal server Error" : error.message || "Error";
 
   return res.status(statusCode).json({ error: message });
 };
@@ -20,7 +20,7 @@ const signUp = async (req, res) => {
   try {
     if (!parsed.success) {
       return res.status(400).json({
-        message: 'Validation Failed',
+        message: "Validation Failed",
         errors: parsed.error.flatten().fieldErrors,
       });
     }
@@ -36,7 +36,7 @@ const signUp = async (req, res) => {
     });
 
     return res.status(201).json({
-      message: 'Sign Up successfull',
+      message: "Sign Up successfull",
       user: {
         fullname: user.fullname,
         email: user.email,
@@ -45,7 +45,7 @@ const signUp = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Sign up failed:', error);
+    console.error("Sign up failed:", error);
     return handleError(res, error);
   }
 };
@@ -53,16 +53,16 @@ const signUp = async (req, res) => {
 // OTP flow: resend a verification code for signup.
 const ResendOtp = async (req, res) => {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ error: 'Email is required' });
+  if (!email) return res.status(400).json({ error: "Email is required" });
 
   try {
     await resendOtpService(email);
 
     return res.status(200).json({
-      message: 'OTP resent successfully',
+      message: "OTP resent successfully",
     });
   } catch (error) {
-    console.error('Resend OTP failed:', error);
+    console.error("Resend OTP failed:", error);
     return handleError(res, error);
   }
 };
@@ -71,13 +71,13 @@ const ResendOtp = async (req, res) => {
 const otpVerification = async (req, res) => {
   const { email, otp } = req.body;
   if (!email || !otp)
-    return res.status(400).json({ error: 'email and otp is required' });
+    return res.status(400).json({ error: "email and otp is required" });
 
   try {
     const user = await verifyOtpService({ email, otp });
 
     return res.status(200).json({
-      message: 'Email verification successful!',
+      message: "Email verification successful!",
       user: {
         fullname: user.fullname,
         email: user.email,
@@ -85,7 +85,7 @@ const otpVerification = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('OTP Verification failed:', error);
+    console.error("OTP Verification failed:", error);
     return handleError(res, error);
   }
 };

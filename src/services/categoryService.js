@@ -1,5 +1,5 @@
-const Category = require('../models/CategorySchema');
-const uploadCategoryImageToCloudinary = require('../helpers/Cloudinary/uploadCategoryImageToCloudinary');
+const Category = require("../models/CategorySchema");
+const uploadCategoryImageToCloudinary = require("../helpers/Cloudinary/uploadCategoryImageToCloudinary");
 
 // Custom Error
 const createHttpError = (statusCode, message) => {
@@ -16,19 +16,19 @@ const getCategories = async () => {
 // Create category
 const createCategory = async ({ name, file, slug, parentId }) => {
   if (!file) {
-    throw createHttpError(400, 'Image is required');
+    throw createHttpError(400, "Image is required");
   }
   if (!name) {
-    throw createHttpError(400, 'Name is required');
+    throw createHttpError(400, "Name is required");
   }
   if (!slug) {
-    throw createHttpError(400, 'Slug is required');
+    throw createHttpError(400, "Slug is required");
   }
 
   const existingCategory = await Category.findOne({ name });
 
   if (existingCategory) {
-    throw createHttpError(409, 'Category already exists');
+    throw createHttpError(409, "Category already exists");
   }
 
   const uploadedImage = await uploadCategoryImageToCloudinary(file);

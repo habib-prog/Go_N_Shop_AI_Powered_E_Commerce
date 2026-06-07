@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const ProductSchema = new mongoose.Schema(
   {
@@ -29,13 +29,13 @@ const ProductSchema = new mongoose.Schema(
     // The id will be coming from the Category model eg. Laptop, Mobile etc..
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category',
+      ref: "Category",
       required: true,
     },
     // The id will be coming from the SubCategory model eg. Apple, Samsung, Xiaomi, Huawei etc..
     subCategory: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category',
+      ref: "Category",
       default: null,
     },
     // Global branding sku for the product eg. iphone17pro 256gb
@@ -93,14 +93,14 @@ const ProductSchema = new mongoose.Schema(
     ],
     status: {
       type: String,
-      enum: ['in-stock', 'pre-order', 'out-of-stock'],
-      default: 'in-stock',
+      enum: ["in-stock", "pre-order", "out-of-stock"],
+      default: "in-stock",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // text search index for search functionality
-ProductSchema.index({ title: 'text', description: 'text', brand: 'text' });
+ProductSchema.index({ title: "text", description: "text", brand: "text" });
 
-module.exports = mongoose.model('Product', ProductSchema);
+module.exports = mongoose.model("Product", ProductSchema);

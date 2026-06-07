@@ -1,21 +1,21 @@
-const express = require('express');
+const express = require("express");
 const {
   ListCategories,
   CreateCategory,
-} = require('../controllers/categoryController');
-const verifyAccessToken = require('../middleware/verifyAccessToken');
-const isAdmin = require('../middleware/isAdmin');
-const uploadCategoryImage = require('../middleware/uploadCategoryImage');
+} = require("../controllers/categoryController");
+const verifyAccessToken = require("../middleware/verifyAccessToken");
+const isAdmin = require("../middleware/isAdmin");
+const uploadCategoryImage = require("../middleware/uploadCategoryImage");
 
 const router = express.Router();
 
-router.get('/', ListCategories);
+router.get("/", ListCategories);
 // Create Category ROUTES
 router.post(
-  '/createcategory',
+  "/createcategory",
   verifyAccessToken,
   isAdmin,
-  uploadCategoryImage.single('thumbnail'),
-  CreateCategory
+  uploadCategoryImage.single("thumbnail"),
+  CreateCategory,
 );
 module.exports = router;

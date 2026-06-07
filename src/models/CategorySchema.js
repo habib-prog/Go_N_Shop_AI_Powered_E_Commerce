@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 /**
  * Category Schema
@@ -30,13 +30,13 @@ const categorySchema = new mongoose.Schema(
     // Points to the parent Category document; null indicates it is a top-level category
     parentId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category',
+      ref: "Category",
       default: null,
     },
   },
   // Automatically manage createdAt and updatedAt timestamps for each category document
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Export the Category model for use in other parts of the application
-module.exports = mongoose.model('Category', categorySchema);
+module.exports = mongoose.model("Category", categorySchema);

@@ -4,12 +4,12 @@ const template = (otp, msg, sub) => {
         <!-- Header -->
         <div style="padding: 36px 32px 20px; text-align: center; background: radial-gradient(circle at top, rgba(248,113,113,0.28), transparent 55%);">
             <h1 style="margin: 0; font-size: 28px; letter-spacing: 3px; text-transform: uppercase; color: #ffffff;">Go N Shop</h1>
-            <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.75); font-size: 14px; text-transform: uppercase; letter-spacing: 1.6px;">${sub || 'Secure Verification'}</p>
+            <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.75); font-size: 14px; text-transform: uppercase; letter-spacing: 1.6px;">${sub || "Secure Verification"}</p>
         </div>
 
         <!-- Body -->
         <div style="padding: 20px 32px 36px; text-align: center;">
-            <h2 style="color: #ffffff; margin-top: 0; margin-bottom: 14px; font-size: 30px; font-weight: 700;">${sub || 'Verification Code'}</h2>
+            <h2 style="color: #ffffff; margin-top: 0; margin-bottom: 14px; font-size: 30px; font-weight: 700;">${sub || "Verification Code"}</h2>
             <div style="display: inline-block; margin: 10px 0 6px; padding: 18px 34px; border-radius: 18px; background: linear-gradient(135deg, #ef4444, #f97316); box-shadow: 0 12px 30px rgba(239, 68, 68, 0.35);">
                 <span style="font-size: 36px; font-weight: 800; color: #ffffff; letter-spacing: 10px;">${otp}</span>
             </div>

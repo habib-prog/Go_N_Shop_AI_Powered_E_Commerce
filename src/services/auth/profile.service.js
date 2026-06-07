@@ -1,16 +1,16 @@
-const User = require('../../models/userSchema');
-const createHttpError = require('./httpError');
-const destroyAvatarFromCloudinary = require('../../helpers/Cloudinary/destroyAvatarFromCloudinary');
-const uploadAvatarToCloudinary = require('../../helpers/Cloudinary/uploadAvatarToCloudinary');
+const User = require("../../models/userSchema");
+const createHttpError = require("./httpError");
+const destroyAvatarFromCloudinary = require("../../helpers/Cloudinary/destroyAvatarFromCloudinary");
+const uploadAvatarToCloudinary = require("../../helpers/Cloudinary/uploadAvatarToCloudinary");
 
 // Profile flow: read/update the logged-in user's profile.
 const getProfile = async (userId) => {
   const user = await User.findById(userId).select(
-    'fullname email avatar address role isBanned createdAt updatedAt'
+    "fullname email avatar address role isBanned createdAt updatedAt",
   );
 
   if (!user) {
-    throw createHttpError(404, 'User not found');
+    throw createHttpError(404, "User not found");
   }
 
   return user;
@@ -20,7 +20,7 @@ const updateProfile = async ({ userId, fullname, file }) => {
   const existingUser = await User.findById(userId);
 
   if (!existingUser) {
-    throw createHttpError(404, 'User not found');
+    throw createHttpError(404, "User not found");
   }
 
   const updateData = {};
@@ -35,7 +35,7 @@ const updateProfile = async ({ userId, fullname, file }) => {
       !process.env.CLOUDINARY_API_KEY ||
       !process.env.CLOUDINARY_API_SECRET
     ) {
-      throw createHttpError(500, 'Cloudinary is not configured');
+      throw createHttpError(500, "Cloudinary is not configured");
     }
 
     const uploadedAvatar = await uploadAvatarToCloudinary(file);
@@ -46,7 +46,7 @@ const updateProfile = async ({ userId, fullname, file }) => {
   const user = await User.findByIdAndUpdate(userId, updateData, {
     new: true,
     runValidators: true,
-  }).select('fullname email avatar address role isBanned createdAt updatedAt');
+  }).select("fullname email avatar address role isBanned createdAt updatedAt");
 
   if (file && existingUser.avatarPublicId) {
     await destroyAvatarFromCloudinary(existingUser.avatarPublicId);
@@ -58,14 +58,14 @@ const updateProfile = async ({ userId, fullname, file }) => {
 const getUserVerificationStatus = async ({ isVerified, page, limit }) => {
   const filter = {};
 
-  if (typeof isVerified === 'boolean') {
+  if (typeof isVerified === "boolean") {
     filter.isVerified = isVerified;
   }
 
   const totalUsers = await User.countDocuments(filter);
   const skip = (page - 1) * limit;
   const users = await User.find(filter)
-    .select('fullname email avatar address role isVerified isBanned createdAt')
+    .select("fullname email avatar address role isVerified isBanned createdAt")
     .skip(skip)
     .limit(limit);
 
@@ -73,9 +73,9 @@ const getUserVerificationStatus = async ({ isVerified, page, limit }) => {
   const hasNextPage = page < totalPages;
   const hasPrevPage = page > 1;
 
-  if (typeof isVerified === 'boolean') {
+  if (typeof isVerified === "boolean") {
     return {
-      message: 'User verification status fetched successfully',
+      message: "User verification status fetched successfully",
       appliedFilter: { isVerified },
       count: users.length,
       users,
@@ -83,8 +83,8 @@ const getUserVerificationStatus = async ({ isVerified, page, limit }) => {
   }
 
   const response = {
-    message: 'User verification status fetched successfully',
-    appliedFilter: 'all users',
+    message: "User verification status fetched successfully",
+    appliedFilter: "all users",
     pagination: {
       totalUsers,
       totalPages,

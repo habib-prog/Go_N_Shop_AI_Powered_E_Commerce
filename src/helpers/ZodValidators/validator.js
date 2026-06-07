@@ -1,21 +1,21 @@
-const { z } = require('zod');
+const { z } = require("zod");
 // ZOD shcema define
 const signUpSchema = z.object({
-  fullname: z.string().min(3, 'Full name must be at least 3 characters'),
-  email: z.string().email('Invalid email'),
-  password: z.string().min(6, 'Password must be minimum 6 charecters'),
+  fullname: z.string().min(3, "Full name must be at least 3 characters"),
+  email: z.string().email("Invalid email"),
+  password: z.string().min(6, "Password must be minimum 6 charecters"),
   avatar: z.string().optional(),
   address: z.string().optional(),
 });
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email'),
-  password: z.string().min(6, 'Password must be minimum 6 charecters'),
+  email: z.string().email("Invalid email"),
+  password: z.string().min(6, "Password must be minimum 6 charecters"),
 });
 
 const schemaCategory = z.object({
-  name: z.string().min(3, 'Name must be minimum of 3 charecters'),
-  slug: z.string().min(3, 'Slug must be minimum of 3 charecters'),
+  name: z.string().min(3, "Name must be minimum of 3 charecters"),
+  slug: z.string().min(3, "Slug must be minimum of 3 charecters"),
   parentId: z.string().optional(),
   image: z.string().optional(),
 });
